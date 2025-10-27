@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "534107830345",
+    "project_id": "looptube-4087c",
+    "storage_bucket": "looptube-4087c.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:534107830345:android:040c2dcc3c2004f4646798",
+        "android_client_info": {
+          "package_name": "com.example.looptube"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB8Psae27nMjIw3bwe485QBtsZxQj52RS4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

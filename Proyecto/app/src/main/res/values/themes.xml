@@ -4,6 +4,22 @@
         <!-- Customize your light theme here. -->
         <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
     </style>
-
     <style name="Theme.LoopTube" parent="Base.Theme.LoopTube" />
+    <style name="LoopTubeButton" parent="Widget.AppCompat.Button">
+        <!-- Quitamos tintes automáticos -->
+        <item name="android:backgroundTint">@null</item>
+        <item name="android:tint">@null</item>
+
+        <!-- Asignamos tu drawable personalizado -->
+        <item name="android:background">@drawable/botones</item>
+
+        <!-- Texto -->
+        <item name="android:textColor">#FFFFFF</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:padding">10dp</item>
+
+        <!-- Efecto de sombra / relieve -->
+        <item name="android:elevation">6dp</item>
+        <item name="android:translationZ">4dp</item>
+    </style>
 </resources>
