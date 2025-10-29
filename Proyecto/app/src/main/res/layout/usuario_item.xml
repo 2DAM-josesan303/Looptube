@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:background="@android:color/transparent"
+    android:paddingVertical="8dp"
+    android:paddingHorizontal="12dp"
+    android:gravity="center_vertical"
+    android:layout_marginBottom="6dp"
+    android:elevation="3dp"
+    android:layout_marginStart="8dp"
+    android:layout_marginEnd="8dp"
+    android:clipToOutline="true">
+
+    <ImageView
+        android:id="@+id/imgUserIcon"
+        android:layout_width="72dp"
+        android:layout_height="72dp"
+        android:src="@drawable/ic_user"
+        android:contentDescription="Icono usuario"
+        android:layout_marginEnd="12dp"
+        android:scaleType="centerCrop"
+        android:adjustViewBounds="true" />
+
+    <TextView
+        android:id="@+id/tvNombreUsuario"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:text="Nombre de usuario"
+        android:textColor="#000000"
+        android:textSize="16sp"
+        android:layout_marginEnd="8dp" />
+
+    <ImageButton
+        android:id="@+id/btnEditar"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:background="@android:color/transparent"
+        android:src="@drawable/ic_edit"
+        android:scaleType="centerInside"
+        android:adjustViewBounds="true"
+        android:contentDescription="Editar usuario"
+        android:layout_marginEnd="8dp" />
+
+    <ImageButton
+        android:id="@+id/btnEliminar"
+        android:layout_width="37dp"
+        android:layout_height="48dp"
+        android:background="@android:color/transparent"
+        android:src="@drawable/ic_delete"
+        android:scaleType="centerInside"
+        android:adjustViewBounds="true"
+        android:contentDescription="Eliminar usuario" />
+
+</LinearLayout>
