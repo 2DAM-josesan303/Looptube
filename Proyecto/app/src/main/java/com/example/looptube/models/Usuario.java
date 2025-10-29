@@ -1,4 +1,4 @@
-package com.example.looptube;
+package com.example.looptube.models;
 
 public class Usuario {
     public String id;
