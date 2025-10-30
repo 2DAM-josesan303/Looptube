@@ -5,13 +5,12 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.room.Room;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-
 import com.example.looptube.models.Usuario;
 
 public class RegisterActivity extends AppCompatActivity {
@@ -19,21 +18,20 @@ public class RegisterActivity extends AppCompatActivity {
     private FirebaseAuth mAuth;
     private DatabaseReference mDatabase;
 
-    private EditText etEmail, etPassword;
+    private EditText etEmail, etPassword, etConfirmPassword;
     private Button btnRegister;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.registro); // Asegúrate de tener este layout
+        setContentView(R.layout.registro);
 
-        // Inicializa Firebase
         mAuth = FirebaseAuth.getInstance();
         mDatabase = FirebaseDatabase.getInstance().getReference();
 
-        // Inicializa vistas
-        etEmail = findViewById(R.id.etUsername);
+        etEmail = findViewById(R.id.etEmail);
         etPassword = findViewById(R.id.etPassword);
+        etConfirmPassword = findViewById(R.id.etConfirmPassword);
         btnRegister = findViewById(R.id.btnRegister);
 
         btnRegister.setOnClickListener(v -> registerUser());
@@ -42,28 +40,55 @@ public class RegisterActivity extends AppCompatActivity {
     private void registerUser() {
         String email = etEmail.getText().toString().trim();
         String password = etPassword.getText().toString().trim();
+        String confirmPassword = etConfirmPassword.getText().toString().trim();
 
-        if (email.isEmpty() || password.isEmpty()) {
-            Toast.makeText(this, "Completa los campos", Toast.LENGTH_SHORT).show();
+        // Validaciones básicas
+        if (email.isEmpty() || password.isEmpty() || confirmPassword.isEmpty()) {
+            Toast.makeText(this, "Completa todos los campos", Toast.LENGTH_SHORT).show();
             return;
         }
 
+        if (!password.equals(confirmPassword)) {
+            Toast.makeText(this, "Las contraseñas no coinciden", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Registrar usuario
         mAuth.createUserWithEmailAndPassword(email, password)
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
                         String userId = mAuth.getCurrentUser().getUid();
+                        String nombre = email.split("@")[0]; // Generar nombre a partir del email
 
-                        // Guarda datos en Firebase Database
-                        Usuario usuario = new Usuario(userId, email, password, "usuario");
+                        // Crear objeto Usuario
+                        Usuario usuario = new Usuario();
+                        usuario.nombre = nombre;
+                        usuario.email = email;
+                        usuario.contraseña_hash = password;
+                        usuario.rol = "usuario";
+
+                        // Guardar en Firebase
                         mDatabase.child("usuarios").child(userId).setValue(usuario)
                                 .addOnCompleteListener(dbTask -> {
                                     if (dbTask.isSuccessful()) {
-                                        Toast.makeText(this, "Usuario registrado correctamente", Toast.LENGTH_SHORT).show();
-                                        // TODO: redirigir a otra actividad o guardar en SQLite
+                                        Toast.makeText(this, "Usuario registrado en Firebase", Toast.LENGTH_SHORT).show();
                                     } else {
-                                        Toast.makeText(this, "Error al guardar en DB: " + dbTask.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                                        Toast.makeText(this, "Error al guardar en Firebase: " + dbTask.getException().getMessage(), Toast.LENGTH_SHORT).show();
                                     }
                                 });
+
+                        // Guardar en SQLite
+                        com.example.looptube.database.AppDatabase db = Room.databaseBuilder(
+                                        getApplicationContext(),
+                                        com.example.looptube.database.AppDatabase.class,
+                                        "looptube_db")
+                                .allowMainThreadQueries()
+                                .build();
+
+                        db.dao().insertarUsuario(usuario);
+
+                        Toast.makeText(this, "Usuario registrado en SQLite", Toast.LENGTH_SHORT).show();
+
                     } else {
                         Toast.makeText(this, "Error al registrar: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
                     }

@@ -63,7 +63,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Usuario"
+            android:text="Correo electronico"
             android:textColor="#000000"
             android:textStyle="bold"
             android:shadowColor="#000000"
@@ -73,7 +73,7 @@
             android:layout_marginLeft="15dp"/>
 
         <EditText
-            android:id="@+id/etUsername"
+            android:id="@+id/etEmail"
             android:layout_width="match_parent"
             android:layout_height="40dp"
             android:layout_marginStart="16dp"
