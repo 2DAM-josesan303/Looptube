@@ -1,5 +1,6 @@
 package com.example.looptube;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.EditText;
@@ -27,6 +28,15 @@ public class RegisterActivity extends AppCompatActivity {
         setContentView(R.layout.registro);
 
         mAuth = FirebaseAuth.getInstance();
+
+        if (mAuth.getCurrentUser() != null) {
+            Toast.makeText(this, "Ya estás registrado. Redirigiendo al inicio de sesión...", Toast.LENGTH_LONG).show();
+            // Redirigir al login
+            startActivity(new Intent(this, LoginActivity.class));
+            finish(); // Cerrar RegisterActivity
+            return;
+        }
+
         mDatabase = FirebaseDatabase.getInstance().getReference();
 
         etEmail = findViewById(R.id.etEmail);
@@ -60,7 +70,6 @@ public class RegisterActivity extends AppCompatActivity {
                         String userId = mAuth.getCurrentUser().getUid();
                         String nombre = email.split("@")[0]; // Generar nombre a partir del email
 
-                        // Crear objeto Usuario
                         Usuario usuario = new Usuario();
                         usuario.nombre = nombre;
                         usuario.email = email;
@@ -72,6 +81,18 @@ public class RegisterActivity extends AppCompatActivity {
                                 .addOnCompleteListener(dbTask -> {
                                     if (dbTask.isSuccessful()) {
                                         Toast.makeText(this, "Usuario registrado en Firebase", Toast.LENGTH_SHORT).show();
+                                        DatabaseReference usuarioRef = mDatabase.child("usuarios").child(userId);
+                                        usuarioRef.get().addOnSuccessListener(snapshot -> {
+                                            Usuario usuarioGuardado = snapshot.getValue(Usuario.class);
+                                            if (usuarioGuardado != null) {
+                                                if ("admin".equals(usuarioGuardado.rol)) {
+                                                    startActivity(new Intent(this, AdminActivity.class));
+                                                } else {
+                                                    startActivity(new Intent(this, MainActivity.class));
+                                                }
+                                                finish(); // cerrar RegisterActivity
+                                            }
+                                        });
                                     } else {
                                         Toast.makeText(this, "Error al guardar en Firebase: " + dbTask.getException().getMessage(), Toast.LENGTH_SHORT).show();
                                     }
@@ -87,7 +108,7 @@ public class RegisterActivity extends AppCompatActivity {
 
                         db.dao().insertarUsuario(usuario);
 
-                        Toast.makeText(this, "Usuario registrado en SQLite", Toast.LENGTH_SHORT).show();
+                        //Toast.makeText(this, "Usuario registrado en SQLite", Toast.LENGTH_SHORT).show();
 
                     } else {
                         Toast.makeText(this, "Error al registrar: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
