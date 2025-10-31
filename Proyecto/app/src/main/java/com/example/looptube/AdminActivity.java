@@ -75,14 +75,12 @@ public class AdminActivity extends AppCompatActivity {
 
         listViewUsuarios.setAdapter(adapter);
 
-        // Botón agregar usuario
         btnAgregarUsuario.setOnClickListener(v -> {
             Intent intent = new Intent(AdminActivity.this, RegisterActivity.class);
             intent.putExtra("creandoUsuario", true);
             startActivity(intent);
         });
 
-        // Botón salir
         btnSalir.setOnClickListener(v -> {
             mAuth.signOut();
             startActivity(new Intent(this, LoginActivity.class));
