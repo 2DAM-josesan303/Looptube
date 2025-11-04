@@ -52,7 +52,6 @@ public class RegisterActivity extends AppCompatActivity {
         String password = etPassword.getText().toString().trim();
         String confirmPassword = etConfirmPassword.getText().toString().trim();
 
-        // Validaciones básicas
         if (email.isEmpty() || password.isEmpty() || confirmPassword.isEmpty()) {
             Toast.makeText(this, "Completa todos los campos", Toast.LENGTH_SHORT).show();
             return;
@@ -63,12 +62,11 @@ public class RegisterActivity extends AppCompatActivity {
             return;
         }
 
-        // Registrar usuario
         mAuth.createUserWithEmailAndPassword(email, password)
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
                         String userId = mAuth.getCurrentUser().getUid();
-                        String nombre = email.split("@")[0]; // Generar nombre a partir del email
+                        String nombre = email.split("@")[0];
 
                         Usuario usuario = new Usuario();
                         usuario.nombre = nombre;
@@ -80,25 +78,21 @@ public class RegisterActivity extends AppCompatActivity {
                         mDatabase.child("usuarios").child(userId).setValue(usuario)
                                 .addOnCompleteListener(dbTask -> {
                                     if (dbTask.isSuccessful()) {
-                                        Toast.makeText(this, "Usuario registrado en Firebase", Toast.LENGTH_SHORT).show();
-                                        DatabaseReference usuarioRef = mDatabase.child("usuarios").child(userId);
-                                        usuarioRef.get().addOnSuccessListener(snapshot -> {
-                                            Usuario usuarioGuardado = snapshot.getValue(Usuario.class);
-                                            if (usuarioGuardado != null) {
-                                                if ("admin".equals(usuarioGuardado.rol)) {
-                                                    startActivity(new Intent(this, AdminActivity.class));
-                                                } else {
-                                                    startActivity(new Intent(this, MainActivity.class));
-                                                }
-                                                finish(); // cerrar RegisterActivity
-                                            }
-                                        });
+                                        Toast.makeText(this, "Usuario Registrado", Toast.LENGTH_LONG).show();
+
+                                        mAuth.signOut();
+
+                                        // Redirigir al login
+                                        Intent intent = new Intent(this, LoginActivity.class);
+                                        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+                                        startActivity(intent);
+                                        finish();
                                     } else {
                                         Toast.makeText(this, "Error al guardar en Firebase: " + dbTask.getException().getMessage(), Toast.LENGTH_SHORT).show();
                                     }
                                 });
 
-                        // Guardar en SQLite
+                        // Guardar también en SQLite (opcional)
                         com.example.looptube.database.AppDatabase db = Room.databaseBuilder(
                                         getApplicationContext(),
                                         com.example.looptube.database.AppDatabase.class,
@@ -107,8 +101,6 @@ public class RegisterActivity extends AppCompatActivity {
                                 .build();
 
                         db.dao().insertarUsuario(usuario);
-
-                        //Toast.makeText(this, "Usuario registrado en SQLite", Toast.LENGTH_SHORT).show();
 
                     } else {
                         Toast.makeText(this, "Error al registrar: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
