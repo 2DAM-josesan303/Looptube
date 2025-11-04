@@ -2,6 +2,7 @@ package com.example.looptube;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
@@ -13,6 +14,8 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.example.looptube.models.Usuario;
+
+import java.util.List;
 
 public class RegisterActivity extends AppCompatActivity {
 
@@ -93,14 +96,25 @@ public class RegisterActivity extends AppCompatActivity {
                                 });
 
                         // Guardar también en SQLite (opcional)
-                        com.example.looptube.database.AppDatabase db = Room.databaseBuilder(
+                        com.example.looptube.AppDatabase db = Room.databaseBuilder(
                                         getApplicationContext(),
-                                        com.example.looptube.database.AppDatabase.class,
+                                        com.example.looptube.AppDatabase.class,
                                         "looptube_db")
                                 .allowMainThreadQueries()
                                 .build();
+                        Log.d("SQLiteDebug", "Intentando insertar usuario en SQLite...");
 
-                        db.dao().insertarUsuario(usuario);
+                        try {
+                            db.dao().insertarUsuario(usuario);
+                            Log.d("SQLiteDebug", "Usuario insertado correctamente en SQLite: " + usuario.email);
+                        } catch (Exception e) {
+                            Log.e("SQLiteDebug", "Error al insertar usuario en SQLite", e);
+                        }
+                        List<Usuario> usuarios = db.dao().obtenerUsuarios();
+                        Log.d("SQLiteDebug", "Usuarios actuales en SQLite: " + usuarios.size());
+                        for (Usuario u : usuarios) {
+                            Log.d("SQLiteDebug", "→ " + u.id + " | " + u.email + " | " + u.rol);
+                        }
 
                     } else {
                         Toast.makeText(this, "Error al registrar: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();

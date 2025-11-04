@@ -4,7 +4,7 @@ import androidx.annotation.NonNull;
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 
-@Entity(tableName = "Usuarios")
+@Entity(tableName = "usuario")
 public class Usuario {
     @PrimaryKey(autoGenerate = true)
     public int id;

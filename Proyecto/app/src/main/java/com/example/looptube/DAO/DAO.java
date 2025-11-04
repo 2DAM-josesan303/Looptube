@@ -23,13 +23,13 @@ public interface DAO {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insertarUsuario(Usuario usuario);
 
-    @Query("SELECT * FROM Usuarios")
+    @Query("SELECT * FROM usuario")
     List<Usuario> obtenerUsuarios();
 
-    @Query("SELECT * FROM Usuarios WHERE id = :idUsuario LIMIT 1")
+    @Query("SELECT * FROM usuario WHERE id = :idUsuario LIMIT 1")
     Usuario obtenerUsuarioPorId(int idUsuario);
 
-    @Query("DELETE FROM Usuarios WHERE id = :idUsuario")
+    @Query("DELETE FROM usuario WHERE id = :idUsuario")
     void eliminarUsuario(int idUsuario);
     // </editor-fold>
 
@@ -37,10 +37,10 @@ public interface DAO {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insertarLista(Lista lista);
 
-    @Query("SELECT * FROM Listas WHERE id_usuario = :idUsuario")
+    @Query("SELECT * FROM lista WHERE id_usuario = :idUsuario")
     List<Lista> obtenerListasPorUsuario(int idUsuario);
 
-    @Query("DELETE FROM Listas WHERE id_lista = :idLista")
+    @Query("DELETE FROM lista WHERE id_lista = :idLista")
     void eliminarLista(int idLista);
     // </editor-fold>
 
@@ -48,13 +48,13 @@ public interface DAO {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insertarCancion(Cancion cancion);
 
-    @Query("SELECT * FROM Canciones")
+    @Query("SELECT * FROM cancion")
     List<Cancion> obtenerCanciones();
 
-    @Query("SELECT * FROM Canciones WHERE id_video = :idVideo LIMIT 1")
+    @Query("SELECT * FROM cancion WHERE id_video = :idVideo LIMIT 1")
     Cancion obtenerCancionPorId(int idVideo);
 
-    @Query("DELETE FROM Canciones WHERE id_video = :idVideo")
+    @Query("DELETE FROM cancion WHERE id_video = :idVideo")
     void eliminarCancion(int idVideo);
     // </editor-fold>
 
@@ -62,10 +62,10 @@ public interface DAO {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insertarFavorito(Favorito favorito);
 
-    @Query("SELECT * FROM Favoritos WHERE id_usuario = :idUsuario")
+    @Query("SELECT * FROM favorito WHERE id_usuario = :idUsuario")
     List<Favorito> obtenerFavoritosPorUsuario(int idUsuario);
 
-    @Query("DELETE FROM Favoritos WHERE id_usuario = :idUsuario AND id_video = :idVideo")
+    @Query("DELETE FROM favorito WHERE id_usuario = :idUsuario AND id_video = :idVideo")
     void eliminarFavorito(int idUsuario, int idVideo);
     // </editor-fold>
 
@@ -74,13 +74,13 @@ public interface DAO {
     void insertarHistorial(Historial historial);
     //obtiene usuario + canciones reproducidas
     @Transaction
-    @Query("SELECT * FROM Usuarios WHERE id = :idUsuario")
+    @Query("SELECT * FROM usuario WHERE id = :idUsuario")
     Historial_Canciones obtenerHistorialCompleto(int idUsuario);
 
-    @Query("SELECT * FROM Historial WHERE id_usuario = :idUsuario ORDER BY fecha_reproduccion DESC")
+    @Query("SELECT * FROM historial WHERE id_usuario = :idUsuario ORDER BY fecha_reproduccion DESC")
     List<Historial> obtenerHistorialPorUsuario(int idUsuario);
 
-    @Query("DELETE FROM Historial WHERE id_usuario = :idUsuario")
+    @Query("DELETE FROM historial WHERE id_usuario = :idUsuario")
     void eliminarHistorialDeUsuario(int idUsuario);
     // </editor-fold>
 }

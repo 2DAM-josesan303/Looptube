@@ -1,4 +1,4 @@
-package com.example.looptube.database;
+package com.example.looptube;
 
 import androidx.room.Database;
 import androidx.room.RoomDatabase;

@@ -3,7 +3,7 @@ package com.example.looptube.models;
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 
-@Entity(tableName = "Historial")
+@Entity(tableName = "historial")
 public class Historial {
     @PrimaryKey(autoGenerate = true)
     public int id;
