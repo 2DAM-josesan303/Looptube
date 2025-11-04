@@ -63,7 +63,7 @@
             android:background="@drawable/edittext_borderedondo"
             android:backgroundTint="#FFFFFF"
             android:inputType="textEmailAddress"
-            android:textColor="#FFFFFF" />
+            android:textColor="#000000" />
 
         <TextView
             android:layout_width="wrap_content"
