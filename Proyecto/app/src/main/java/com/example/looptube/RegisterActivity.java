@@ -25,7 +25,7 @@ public class RegisterActivity extends AppCompatActivity {
 
     private EditText etEmail, etPassword, etConfirmPassword;
     private Button btnRegister;
-
+    private boolean creandoUsuario = false;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -33,13 +33,13 @@ public class RegisterActivity extends AppCompatActivity {
 
         mAuth = FirebaseAuth.getInstance();
 
-        if (mAuth.getCurrentUser() != null) {
-            Toast.makeText(this, "Ya estás registrado. Redirigiendo al inicio de sesión...", Toast.LENGTH_LONG).show();
-            // Redirigir al login
-            startActivity(new Intent(this, LoginActivity.class));
-            finish(); // Cerrar RegisterActivity
-            return;
-        }
+//        if (mAuth.getCurrentUser() != null) {
+//            Toast.makeText(this, "Ya estás registrado. Redirigiendo al inicio de sesión...", Toast.LENGTH_LONG).show();
+//            // Redirigir al login
+//            startActivity(new Intent(this, LoginActivity.class));
+//            finish(); // Cerrar RegisterActivity
+//            return;
+//        }
 
         mDatabase = FirebaseDatabase.getInstance().getReference();
 
@@ -47,6 +47,14 @@ public class RegisterActivity extends AppCompatActivity {
         etPassword = findViewById(R.id.etPassword);
         etConfirmPassword = findViewById(R.id.etConfirmPassword);
         btnRegister = findViewById(R.id.btnRegister);
+        creandoUsuario = getIntent().getBooleanExtra("creandoUsuario", false);
+
+        if (!creandoUsuario && mAuth.getCurrentUser() != null) {
+            Toast.makeText(this, "Ya estás registrado. Redirigiendo al inicio de sesión...", Toast.LENGTH_LONG).show();
+            startActivity(new Intent(this, LoginActivity.class));
+            finish();
+            return;
+        }
 
         btnRegister.setOnClickListener(v -> registerUser());
     }
@@ -83,9 +91,12 @@ public class RegisterActivity extends AppCompatActivity {
                                 .addOnCompleteListener(dbTask -> {
                                     if (dbTask.isSuccessful()) {
                                         Toast.makeText(this, "Usuario Registrado", Toast.LENGTH_LONG).show();
-
+                                        if (creandoUsuario) {
+                                            startActivity(new Intent(this, AdminActivity.class));
+                                            finish();
+                                            return;
+                                        }
                                         mAuth.signOut();
-
                                         // Redirigir al login
                                         Intent intent = new Intent(this, LoginActivity.class);
                                         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -96,7 +107,7 @@ public class RegisterActivity extends AppCompatActivity {
                                     }
                                 });
 
-                        // Guardar también en SQLite (opcional)
+                        //Operacion guardar en SQLite
                         com.example.looptube.AppDatabase db = Room.databaseBuilder(
                                         getApplicationContext(),
                                         com.example.looptube.AppDatabase.class,

@@ -48,7 +48,7 @@ public class AdminActivity extends AppCompatActivity {
             @Override
             public void onEditar(Usuario usuario) {
                 Intent intent = new Intent(AdminActivity.this, EditUserActivity.class);
-                intent.putExtra("userId", usuario.id);
+                intent.putExtra("firebaseId", usuario.firebaseId);
                 startActivity(intent);
             }
 
@@ -58,7 +58,7 @@ public class AdminActivity extends AppCompatActivity {
                         .setTitle("Eliminar usuario")
                         .setMessage("¿Seguro que quieres eliminar al usuario " + usuario.nombre + "?")
                         .setPositiveButton("Sí", (dialog, which) -> {
-                            mDatabase.child(String.valueOf(usuario.id)).removeValue()
+                            mDatabase.child(usuario.firebaseId).removeValue()
                                     .addOnSuccessListener(aVoid -> {
                                         Toast.makeText(AdminActivity.this, "Usuario eliminado", Toast.LENGTH_SHORT).show();
                                         UsuariosList.remove(usuario);
@@ -96,6 +96,7 @@ public class AdminActivity extends AppCompatActivity {
             for (DataSnapshot userSnapshot : snapshot.getChildren()) {
                 Usuario usuario = userSnapshot.getValue(Usuario.class);
                 if (usuario != null) {
+                    usuario.firebaseId = userSnapshot.getKey();
                     UsuariosList.add(usuario);
                 }
             }
@@ -103,5 +104,11 @@ public class AdminActivity extends AppCompatActivity {
         }).addOnFailureListener(e ->
                 Toast.makeText(this, "Error al cargar usuarios: " + e.getMessage(), Toast.LENGTH_SHORT).show()
         );
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        cargarUsuarios();
     }
 }

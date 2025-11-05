@@ -43,7 +43,8 @@ public interface DAO {
     @Query("DELETE FROM lista WHERE id_lista = :idLista")
     void eliminarLista(int idLista);
     // </editor-fold>
-
+    @Query("SELECT * FROM usuario WHERE firebaseId = :firebaseId LIMIT 1")
+    Usuario obtenerUsuarioPorFirebaseId(String firebaseId);
     // <editor-fold desc="CANCIONES">
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insertarCancion(Cancion cancion);
