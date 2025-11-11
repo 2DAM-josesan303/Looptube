@@ -87,7 +87,7 @@
     </LinearLayout>
 
     <!-- REPRODUCTOR DE YOUTUBE -->
-    <WebView
+    <com.pierfrancescosoffritti.androidyoutubeplayer.core.player.views.YouTubePlayerView
         android:id="@+id/youtubePlayer"
         android:layout_width="match_parent"
         android:layout_height="250dp"
