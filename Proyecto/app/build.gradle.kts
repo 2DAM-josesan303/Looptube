@@ -40,6 +40,8 @@ dependencies {
     implementation("androidx.room:room-runtime:2.6.1")
     annotationProcessor("androidx.room:room-compiler:2.6.1")
     implementation("androidx.room:room-ktx:2.6.1")
+    implementation("com.pierfrancescosoffritti.androidyoutubeplayer:core:11.1.0")
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation(libs.appcompat)
     implementation(libs.material)
     implementation(libs.activity)
