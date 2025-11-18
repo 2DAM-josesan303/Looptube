@@ -8,13 +8,15 @@ public class Cancion {
     @PrimaryKey(autoGenerate = true)
     public int id_video;
     public String titulo;
+    public String youtubeId;
     public String canal;
     public String url_miniatura;
 
     public Cancion() {}
 
-    public Cancion(String titulo, String canal, String url_miniatura) {
+    public Cancion(String titulo, String youtubeId,String canal, String url_miniatura) {
         this.titulo = titulo;
+        this.youtubeId = youtubeId;
         this.canal = canal;
         this.url_miniatura = url_miniatura;
     }
