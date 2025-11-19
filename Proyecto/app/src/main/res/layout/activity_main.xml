@@ -47,16 +47,62 @@
             app:layout_constraintBottom_toBottomOf="parent"/>
     </androidx.constraintlayout.widget.ConstraintLayout>
 
-    <!-- REPRODUCTOR -->
-    <com.pierfrancescosoffritti.androidyoutubeplayer.core.player.views.YouTubePlayerView
-        android:id="@+id/youtubePlayer"
+    <!-- WEBVIEW BUSCADOR -->
+    <WebView
+        android:id="@+id/webBuscador"
         android:layout_width="0dp"
         android:layout_height="250dp"
+        android:background="#FFFFFF"
         app:layout_constraintTop_toBottomOf="@id/header"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>
 
-    <!-- CONTROLES DE REPRODUCCIÓN -->
+    <!-- INPUT URL -->
+    <EditText
+        android:id="@+id/etUrl"
+        android:layout_width="0dp"
+        android:layout_height="45dp"
+        android:hint="Pega un enlace de YouTube"
+        android:background="@android:drawable/edit_text"
+        android:padding="10dp"
+        android:textColor="#000"
+        android:textColorHint="#444"
+        app:layout_constraintTop_toBottomOf="@id/webBuscador"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_margin="10dp"/>
+
+    <!-- BOTONES DE ACCIÓN -->
+    <LinearLayout
+        android:id="@+id/contenedorBotones"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:padding="10dp"
+        app:layout_constraintTop_toBottomOf="@id/etUrl"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <Button
+            android:id="@+id/btnCargar"
+            android:layout_width="wrap_content"
+            android:layout_height="45dp"
+            android:text="Reproducir"
+            android:backgroundTint="#2D7F3B"
+            android:textColor="#FFFFFF"
+            android:layout_marginEnd="5dp"/>
+
+        <Button
+            android:id="@+id/btnAñadirCola"
+            android:layout_width="wrap_content"
+            android:layout_height="45dp"
+            android:text="Añadir"
+            android:backgroundTint="#1E5C28"
+            android:textColor="#FFFFFF"/>
+    </LinearLayout>
+
+    <!-- CONTROLES ANTERIOR/SIGUIENTE -->
     <LinearLayout
         android:id="@+id/contenedorReproductor"
         android:layout_width="0dp"
@@ -64,9 +110,10 @@
         android:orientation="vertical"
         android:gravity="center_horizontal"
         android:padding="16dp"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/contenedorBotones"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent">
 
         <TextView
             android:id="@+id/tvTitulo"
@@ -87,8 +134,8 @@
 
             <ImageButton
                 android:id="@+id/btnPrev"
-                android:layout_width="50dp"
-                android:layout_height="50dp"
+                android:layout_width="55dp"
+                android:layout_height="55dp"
                 android:src="@drawable/ic_prev"
                 android:background="@null"
                 app:tint="#000000"
@@ -98,8 +145,8 @@
 
             <ImageButton
                 android:id="@+id/btnNext"
-                android:layout_width="50dp"
-                android:layout_height="50dp"
+                android:layout_width="55dp"
+                android:layout_height="55dp"
                 android:src="@drawable/ic_next"
                 android:background="@null"
                 app:tint="#000000"
