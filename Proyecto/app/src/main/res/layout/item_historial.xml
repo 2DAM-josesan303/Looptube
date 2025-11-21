@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="88dp"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:paddingStart="8dp"
+    android:paddingEnd="8dp">
+
+    <!-- Icono de música -->
+    <ImageView
+        android:id="@+id/ivIcono"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:src="@drawable/ic_music"
+        android:contentDescription="icono" />
+
+    <!-- Título de la canción -->
+    <TextView
+        android:id="@+id/tvTituloItem"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:layout_marginStart="12dp"
+        android:text="Nombre de la canción"
+        android:textSize="16sp"
+        android:textColor="#000000"
+        android:textStyle="bold"
+        android:ellipsize="end"
+        android:singleLine="true" />
+
+    <!-- Botón de reproducir -->
+    <ImageButton
+        android:id="@+id/btnPlayItem"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:background="@null"
+        android:src="@drawable/ic_play"
+        android:contentDescription="Reproducir canción" />
+
+</LinearLayout>
