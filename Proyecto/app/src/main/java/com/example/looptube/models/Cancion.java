@@ -9,6 +9,7 @@ public class Cancion {
     public int id_video;
     public String titulo;
     public String youtubeId;
+    public String key;
     public String canal;
     public String url_miniatura;
 

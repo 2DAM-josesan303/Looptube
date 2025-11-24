@@ -1,160 +1,189 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
+<androidx.drawerlayout.widget.DrawerLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/drawerLayout"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="@drawable/gradiente_verde">
+    android:layout_height="match_parent">
 
-    <!-- CABECERA -->
+    <!-- ===================== -->
+    <!--   CONTENIDO PRINCIPAL -->
+    <!-- ===================== -->
     <androidx.constraintlayout.widget.ConstraintLayout
-        android:id="@+id/header"
+        android:id="@+id/mainContent"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:padding="8dp"
-        app:layout_constraintTop_toTopOf="parent">
+        android:layout_height="match_parent"
+        android:background="@drawable/gradiente_verde">
 
-        <ImageButton
-            android:id="@+id/btnMenu"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:src="@drawable/ic_menu"
-            android:background="@null"
-            app:tint="#000000"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent" />
-
-        <ImageView
-            android:id="@+id/logoApp"
-            android:layout_width="70dp"
-            android:layout_height="70dp"
-            android:src="@drawable/looptubeicon"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent" />
-
-        <ImageButton
-            android:id="@+id/btnPerfil"
-            android:layout_width="45dp"
-            android:layout_height="45dp"
-            android:background="@drawable/circle_background"
-            android:scaleType="centerInside"
-            app:tint="@android:color/white"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent"/>
-    </androidx.constraintlayout.widget.ConstraintLayout>
-
-    <!-- WEBVIEW BUSCADOR -->
-    <WebView
-        android:id="@+id/webBuscador"
-        android:layout_width="0dp"
-        android:layout_height="250dp"
-        android:background="#FFFFFF"
-        app:layout_constraintTop_toBottomOf="@id/header"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"/>
-
-    <!-- INPUT URL -->
-    <EditText
-        android:id="@+id/etUrl"
-        android:layout_width="0dp"
-        android:layout_height="45dp"
-        android:hint="Pega un enlace de YouTube"
-        android:background="@android:drawable/edit_text"
-        android:padding="10dp"
-        android:textColor="#000"
-        android:textColorHint="#444"
-        app:layout_constraintTop_toBottomOf="@id/webBuscador"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:layout_margin="10dp"/>
-
-    <!-- BOTONES DE ACCIÓN -->
-    <LinearLayout
-        android:id="@+id/contenedorBotones"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center"
-        android:padding="10dp"
-        app:layout_constraintTop_toBottomOf="@id/etUrl"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
-
-        <Button
-            android:id="@+id/btnCargar"
-            android:layout_width="wrap_content"
-            android:layout_height="45dp"
-            android:text="Reproducir"
-            android:backgroundTint="#2D7F3B"
-            android:textColor="#FFFFFF"
-            android:layout_marginEnd="5dp"/>
-
-        <Button
-            android:id="@+id/btnAñadirCola"
-            android:layout_width="wrap_content"
-            android:layout_height="45dp"
-            android:text="Añadir"
-            android:backgroundTint="#1E5C28"
-            android:textColor="#FFFFFF"/>
-    </LinearLayout>
-
-    <!-- CONTROLES ANTERIOR/SIGUIENTE -->
-    <LinearLayout
-        android:id="@+id/contenedorReproductor"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:gravity="center_horizontal"
-        android:padding="16dp"
-        app:layout_constraintTop_toBottomOf="@id/contenedorBotones"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent">
-
-        <TextView
-            android:id="@+id/tvTitulo"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Nombre del video"
-            android:textColor="#000000"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            android:layout_marginTop="4dp"/>
-
+        <!-- CABECERA -->
         <androidx.constraintlayout.widget.ConstraintLayout
-            android:id="@+id/contenedorControles"
+            android:id="@+id/header"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:paddingHorizontal="20dp"
-            android:layout_marginTop="12dp">
+            android:padding="8dp"
+            app:layout_constraintTop_toTopOf="parent">
 
             <ImageButton
-                android:id="@+id/btnPrev"
-                android:layout_width="55dp"
-                android:layout_height="55dp"
-                android:src="@drawable/ic_prev"
+                android:id="@+id/btnMenu"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:src="@drawable/ic_menu"
                 android:background="@null"
                 app:tint="#000000"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintBottom_toBottomOf="parent" />
 
+            <ImageView
+                android:id="@+id/logoApp"
+                android:layout_width="70dp"
+                android:layout_height="70dp"
+                android:src="@drawable/looptubeicon"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent" />
+
             <ImageButton
-                android:id="@+id/btnNext"
-                android:layout_width="55dp"
-                android:layout_height="55dp"
-                android:src="@drawable/ic_next"
-                android:background="@null"
-                app:tint="#000000"
+                android:id="@+id/btnPerfil"
+                android:layout_width="45dp"
+                android:layout_height="45dp"
+                android:background="@drawable/circle_background"
+                android:scaleType="centerInside"
+                app:tint="@android:color/white"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
-                app:layout_constraintBottom_toBottomOf="parent" />
-
+                app:layout_constraintBottom_toBottomOf="parent"/>
         </androidx.constraintlayout.widget.ConstraintLayout>
-    </LinearLayout>
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+        <!-- WEBVIEW BUSCADOR -->
+        <WebView
+            android:id="@+id/webBuscador"
+            android:layout_width="0dp"
+            android:layout_height="300dp"
+            android:background="#FFFFFF"
+            app:layout_constraintTop_toBottomOf="@id/header"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"/>
+
+        <!-- INPUT URL -->
+        <EditText
+            android:id="@+id/etUrl"
+            android:layout_width="0dp"
+            android:layout_height="45dp"
+            android:hint="Pega un enlace de YouTube"
+            android:background="@android:drawable/edit_text"
+            android:padding="10dp"
+            android:textColor="#000"
+            android:textColorHint="#444"
+            android:layout_margin="10dp"
+            app:layout_constraintTop_toBottomOf="@id/webBuscador"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"/>
+
+        <!-- BOTONES DE ACCIÓN -->
+        <LinearLayout
+            android:id="@+id/contenedorBotones"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:padding="10dp"
+            app:layout_constraintTop_toBottomOf="@id/etUrl"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent">
+
+            <Button
+                android:id="@+id/btnCargar"
+                android:layout_width="wrap_content"
+                android:layout_height="45dp"
+                android:text="Reproducir"
+                android:backgroundTint="#2D7F3B"
+                android:textColor="#FFFFFF"
+                android:layout_marginEnd="5dp"/>
+
+            <Button
+                android:id="@+id/btnAñadirCola"
+                android:layout_width="wrap_content"
+                android:layout_height="45dp"
+                android:text="Añadir a Cola"
+                android:backgroundTint="#1E5C28"
+                android:textColor="#FFFFFF"/>
+
+            <ImageButton
+                android:id="@+id/btnGuardarFavorito"
+                android:layout_width="45dp"
+                android:layout_height="45dp"
+                android:background="@null"
+                android:src="@drawable/ic_fav"
+                android:contentDescription="Guardar favorito"/>
+        </LinearLayout>
+
+        <!-- CONTROLES ANTERIOR/SIGUIENTE -->
+        <LinearLayout
+            android:id="@+id/contenedorReproductor"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center_horizontal"
+            android:padding="16dp"
+            app:layout_constraintTop_toBottomOf="@id/contenedorBotones"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent">
+
+            <TextView
+                android:id="@+id/tvTitulo"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Nombre del video"
+                android:textColor="#000000"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:layout_marginTop="4dp"/>
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/contenedorControles"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingHorizontal="20dp"
+                android:layout_marginTop="12dp">
+
+                <ImageButton
+                    android:id="@+id/btnPrev"
+                    android:layout_width="55dp"
+                    android:layout_height="55dp"
+                    android:src="@drawable/ic_prev"
+                    android:background="@null"
+                    app:tint="#000000"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent" />
+
+                <ImageButton
+                    android:id="@+id/btnNext"
+                    android:layout_width="55dp"
+                    android:layout_height="55dp"
+                    android:src="@drawable/ic_next"
+                    android:background="@null"
+                    app:tint="#000000"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent" />
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+        </LinearLayout>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <!-- ===================== -->
+    <!--     MENÚ LATERAL      -->
+    <!-- ===================== -->
+    <com.google.android.material.navigation.NavigationView
+        android:id="@+id/navigationView"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_gravity="start"
+        app:menu="@menu/menu_lateral" />
+
+</androidx.drawerlayout.widget.DrawerLayout>
