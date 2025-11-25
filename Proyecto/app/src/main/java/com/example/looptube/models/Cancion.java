@@ -21,4 +21,20 @@ public class Cancion {
         this.canal = canal;
         this.url_miniatura = url_miniatura;
     }
+
+    // -----------------------------
+    // Método estático para extraer canal desde el título
+    // -----------------------------
+    public static String extraerCanal(String titulo) {
+        if (titulo == null || !titulo.contains(" - ")) return "Canal desconocido";
+        int primerGuion = titulo.indexOf(" - ");
+        return titulo.substring(0, primerGuion).trim();
+    }
+
+    // Método de utilidad para asegurarse de que el canal está correcto
+    public void asegurarCanal() {
+        if (this.canal == null || this.canal.equals("Canal desconocido")) {
+            this.canal = extraerCanal(this.titulo);
+        }
+    }
 }

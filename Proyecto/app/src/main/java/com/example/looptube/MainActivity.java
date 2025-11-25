@@ -40,7 +40,9 @@ public class MainActivity extends AppCompatActivity {
     private ArrayList<String> cola = new ArrayList<>();
     private int indiceActual = -1;
 
-    // Firebase
+    private String currentChannel = "Canal desconocido";
+    private String currentThumbnail = "url_miniatura_placeholder";
+
     private DatabaseReference dbCanciones;
 
     @Override
@@ -48,9 +50,6 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // ------------------------------
-        // Inicializar vistas
-        // ------------------------------
         etUrl = findViewById(R.id.etUrl);
         btnCargar = findViewById(R.id.btnCargar);
         btnAñadirCola = findViewById(R.id.btnAñadirCola);
@@ -63,38 +62,57 @@ public class MainActivity extends AppCompatActivity {
         drawerLayout = findViewById(R.id.drawerLayout);
         navigationView = findViewById(R.id.navigationView);
 
-        // ------------------------------
         // Configurar WebView
-        // ------------------------------
         webBuscador.getSettings().setJavaScriptEnabled(true);
         webBuscador.addJavascriptInterface(new WebAppInterface(), "Android");
         webBuscador.setWebViewClient(new WebViewClient() {
             @Override
             public void onPageFinished(WebView view, String url) {
-                view.loadUrl("javascript:Android.setTitle(document.title);");
+                view.loadUrl("javascript:Android.setTitle(document.title)");
+                view.loadUrl("javascript:(function(){ " +
+                        "var channel = document.querySelector('#owner-name a, .ytd-channel-name a');" +
+                        "Android.setChannel(channel ? channel.innerText : 'Canal desconocido');" +
+                        "})();");
+                view.loadUrl("javascript:(function(){ " +
+                        "var vid = new URL(window.location.href).searchParams.get('v');" +
+                        "if (vid) Android.setThumbnail('https://img.youtube.com/vi/' + vid + '/hqdefault.jpg');" +
+                        "})();");
             }
         });
+
         webBuscador.loadUrl("https://m.youtube.com");
 
-        // ------------------------------
-        // Inicializar Firebase
-        // ------------------------------
         dbCanciones = FirebaseDatabase.getInstance().getReference("canciones");
 
-        // ------------------------------
-        // Cargar la cola desde Firebase
-        // ------------------------------
         cargarColaDesdeFirebase();
 
         // ------------------------------
-        // Reproducir video si viene desde FavoritosActivity
+        // Reproducir desde FavoritosActivity
         // ------------------------------
         Intent intent = getIntent();
         if (intent != null && intent.hasExtra("videoId")) {
             String videoId = intent.getStringExtra("videoId");
             if (videoId != null && !videoId.isEmpty()) {
                 reproducirVideo(videoId);
+
+                currentChannel = intent.hasExtra("channelName")
+                        ? intent.getStringExtra("channelName")
+                        : "Canal desconocido";
+
+                currentThumbnail = intent.hasExtra("thumbnailUrl")
+                        ? intent.getStringExtra("thumbnailUrl")
+                        : "url_miniatura_placeholder";
+
+                // ------------------------------
+                // Ajustar cola para reproducir correctamente
+                // ------------------------------
                 if (!cola.contains(videoId)) {
+                    // Si no existe, añadir al final
+                    cola.add(videoId);
+                    indiceActual = cola.size() - 1;
+                } else {
+                    // Si ya existe, mover al final y actualizar índice
+                    cola.remove(videoId);
                     cola.add(videoId);
                     indiceActual = cola.size() - 1;
                 }
@@ -102,7 +120,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         // ------------------------------
-        // Botón Reproducir
+        // Botón cargar URL
         // ------------------------------
         btnCargar.setOnClickListener(v -> {
             String url = etUrl.getText().toString().trim();
@@ -119,7 +137,7 @@ public class MainActivity extends AppCompatActivity {
         });
 
         // ------------------------------
-        // Botón Añadir a Cola (Firebase)
+        // Añadir a cola y Firebase
         // ------------------------------
         btnAñadirCola.setOnClickListener(v -> {
             String url = etUrl.getText().toString().trim();
@@ -129,75 +147,63 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
 
-            // Añadir a cola local
             cola.add(id);
 
-            // Crear objeto Cancion con datos básicos
-            Cancion c = new Cancion(tvTitulo.getText().toString(), id, "Canal Desconocido", "url_miniatura_placeholder");
+            Cancion c = new Cancion(tvTitulo.getText().toString(), id, currentChannel, currentThumbnail);
+            c.asegurarCanal(); // extrae canal si estaba desconocido
 
-            // Añadir a Firebase
             dbCanciones.child(id).setValue(c)
-                    .addOnSuccessListener(a -> Toast.makeText(MainActivity.this, "Añadido a la cola y Firebase", Toast.LENGTH_SHORT).show())
-                    .addOnFailureListener(e -> Toast.makeText(MainActivity.this, "Error al añadir a Firebase", Toast.LENGTH_SHORT).show());
+                    .addOnSuccessListener(a -> Toast.makeText(this, "Añadido a la cola y Firebase", Toast.LENGTH_SHORT).show())
+                    .addOnFailureListener(e -> Toast.makeText(this, "Error al añadir a Firebase", Toast.LENGTH_SHORT).show());
         });
 
         // ------------------------------
-        // Botones Anterior/Siguiente
+        // Botones anterior/siguiente
         // ------------------------------
         btnPrev.setOnClickListener(v -> {
             if (indiceActual > 0) {
                 indiceActual--;
                 reproducirVideo(cola.get(indiceActual));
-            } else {
-                Toast.makeText(this, "No hay video anterior", Toast.LENGTH_SHORT).show();
-            }
+            } else Toast.makeText(this, "No hay video anterior", Toast.LENGTH_SHORT).show();
         });
 
         btnNext.setOnClickListener(v -> {
             if (indiceActual < cola.size() - 1) {
                 indiceActual++;
                 reproducirVideo(cola.get(indiceActual));
-            } else {
-                Toast.makeText(this, "No hay más videos en la cola", Toast.LENGTH_SHORT).show();
-            }
+            } else Toast.makeText(this, "No hay más videos en la cola", Toast.LENGTH_SHORT).show();
         });
 
         // ------------------------------
-        // Botón del menú lateral
+        // Menú lateral
         // ------------------------------
         btnMenu.setOnClickListener(v -> drawerLayout.openDrawer(GravityCompat.START));
-
-        // ------------------------------
-        // Manejar selección del menú
-        // ------------------------------
         navigationView.setNavigationItemSelectedListener(item -> {
             if (item.getItemId() == R.id.nav_favoritos) {
                 startActivity(new Intent(MainActivity.this, FavoritosActivity.class));
-                drawerLayout.closeDrawer(GravityCompat.START);
             }
             return true;
         });
 
         // ------------------------------
-        // Botón Guardar Favorito
+        // Guardar favorito
         // ------------------------------
         btnGuardarFavorito.setOnClickListener(v -> {
-            String titulo = tvTitulo.getText().toString();
             String url = webBuscador.getUrl();
             String id = extraerYoutubeId(url);
-
             if (id == null) {
-                Toast.makeText(MainActivity.this, "No se pudo obtener el video", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "No se pudo obtener el video", Toast.LENGTH_SHORT).show();
                 return;
             }
 
-            Cancion c = new Cancion(titulo, id, "Canal Desconocido", "url_miniatura_placeholder");
+            Cancion c = new Cancion(tvTitulo.getText().toString(), id, currentChannel, currentThumbnail);
+            c.asegurarCanal();
 
             FirebaseDatabase.getInstance().getReference("favoritos")
                     .push()
                     .setValue(c)
-                    .addOnSuccessListener(a -> Toast.makeText(MainActivity.this, "Añadido a favoritos", Toast.LENGTH_SHORT).show())
-                    .addOnFailureListener(e -> Toast.makeText(MainActivity.this, "Error al añadir favorito", Toast.LENGTH_SHORT).show());
+                    .addOnSuccessListener(a -> Toast.makeText(this, "Añadido a favoritos", Toast.LENGTH_SHORT).show())
+                    .addOnFailureListener(e -> Toast.makeText(this, "Error al añadir favorito", Toast.LENGTH_SHORT).show());
         });
     }
 
@@ -210,9 +216,20 @@ public class MainActivity extends AppCompatActivity {
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 cola.clear();
                 for (DataSnapshot ds : snapshot.getChildren()) {
-                    cola.add(ds.getKey()); // Guardamos solo el ID del video
+                    String videoId = ds.getKey();
+                    if (videoId != null) {
+                        Cancion c = ds.getValue(Cancion.class);
+                        if (c != null) {
+                            c.asegurarCanal();
+                            // actualizar Firebase si el canal cambió
+                            if (!c.canal.equals(ds.child("canal").getValue(String.class))) {
+                                dbCanciones.child(videoId).setValue(c);
+                            }
+                        }
+                        cola.add(videoId);
+                    }
                 }
-                if (!cola.isEmpty()) {
+                if (!cola.isEmpty() && indiceActual == -1) {
                     indiceActual = 0;
                     reproducirVideo(cola.get(indiceActual));
                 }
@@ -250,19 +267,36 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public void onBackPressed() {
-        if (drawerLayout.isDrawerOpen(GravityCompat.START)) {
-            drawerLayout.closeDrawer(GravityCompat.START);
-        } else if (webBuscador.canGoBack()) {
-            webBuscador.goBack();
-        } else {
-            super.onBackPressed();
-        }
+        if (drawerLayout.isDrawerOpen(GravityCompat.START)) drawerLayout.closeDrawer(GravityCompat.START);
+        else if (webBuscador.canGoBack()) webBuscador.goBack();
+        else super.onBackPressed();
     }
 
+    // ------------------------------
+    // Interfaz de JavaScript
+    // ------------------------------
     public class WebAppInterface {
         @JavascriptInterface
         public void setTitle(String title) {
-            runOnUiThread(() -> tvTitulo.setText(title));
+            runOnUiThread(() -> {
+                tvTitulo.setText(title);
+                if ("Canal desconocido".equals(currentChannel)) {
+                    int primerGuion = title.indexOf(" - ");
+                    if (primerGuion != -1) {
+                        currentChannel = title.substring(0, primerGuion).trim();
+                    }
+                }
+            });
+        }
+
+        @JavascriptInterface
+        public void setChannel(String canal) {
+            runOnUiThread(() -> currentChannel = canal);
+        }
+
+        @JavascriptInterface
+        public void setThumbnail(String url) {
+            runOnUiThread(() -> currentThumbnail = url);
         }
     }
 }
