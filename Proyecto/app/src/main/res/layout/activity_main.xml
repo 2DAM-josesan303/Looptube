@@ -114,9 +114,18 @@
                 android:id="@+id/btnGuardarFavorito"
                 android:layout_width="45dp"
                 android:layout_height="45dp"
+                android:layout_marginLeft="10dp"
+                android:layout_marginRight="20dp"
                 android:background="@null"
                 android:src="@drawable/ic_fav"
                 android:contentDescription="Guardar favorito"/>
+
+            <ImageButton
+                android:id="@+id/btnAñadirALista"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:src="@drawable/ic_add"
+                android:background="@android:color/transparent"/>
         </LinearLayout>
 
         <!-- CONTROLES ANTERIOR/SIGUIENTE -->

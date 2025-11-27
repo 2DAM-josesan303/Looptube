@@ -58,9 +58,7 @@ public class FavoritosActivity extends AppCompatActivity {
         dbFavoritos = FirebaseDatabase.getInstance().getReference("favoritos");
         dbCanciones = FirebaseDatabase.getInstance().getReference("canciones");
 
-        // -----------------------------
-        // Adapter Favoritos
-        // -----------------------------
+
         favoritoAdapter = new FavoritoAdapter(listaFavoritos, new FavoritoAdapter.Listener() {
             @Override
             public void onPlay(Cancion c) {
@@ -83,9 +81,7 @@ public class FavoritosActivity extends AppCompatActivity {
         });
         rvFavoritos.setAdapter(favoritoAdapter);
 
-        // -----------------------------
-        // Adapter Historial
-        // -----------------------------
+
         historialAdapter = new HistorialAdapter(listaHistorial, c -> {
             c.asegurarCanal();
             dbCanciones.child(c.youtubeId).setValue(c)
@@ -103,9 +99,7 @@ public class FavoritosActivity extends AppCompatActivity {
         cargarFavoritos();
         cargarHistorial();
 
-        // -----------------------------
-        // Botón borrar cola
-        // -----------------------------
+
         btnBorrarHistorial.setOnClickListener(v -> mostrarDialogoEliminacion(
                 "Borrar Historial",
                 "¿Seguro que quieres borrar todo el historial?",
@@ -122,16 +116,21 @@ public class FavoritosActivity extends AppCompatActivity {
                 }
         ));
 
-        // -----------------------------
-        // Botón menú lateral
-        // -----------------------------
+
         btnMenu.setOnClickListener(v -> drawerLayout.openDrawer(GravityCompat.START));
+
         navigationView.setNavigationItemSelectedListener(item -> {
-            if (item.getItemId() == R.id.nav_favoritos) {
+            int id = item.getItemId();
+
+            if (id == R.id.nav_favoritos) {
                 drawerLayout.closeDrawer(GravityCompat.START);
-            } else if (item.getItemId() == R.id.nav_busqueda) {
+            } else if (id == R.id.nav_busqueda) {
                 startActivity(new Intent(FavoritosActivity.this, MainActivity.class));
+            } else if (id == R.id.nav_listas) {
+                startActivity(new Intent(FavoritosActivity.this, ListasReproduccionActivity.class));
             }
+
+            drawerLayout.closeDrawer(GravityCompat.START);
             return true;
         });
     }

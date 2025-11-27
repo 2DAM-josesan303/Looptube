@@ -1,6 +1,7 @@
 package com.example.looptube;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
@@ -10,22 +11,19 @@ import android.os.Bundle;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.looptube.models.Cancion;
+import com.example.looptube.models.Lista;
 import com.google.android.material.navigation.NavigationView;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.database.*;
 
 import java.util.ArrayList;
-
-import com.example.looptube.models.Cancion;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -44,6 +42,7 @@ public class MainActivity extends AppCompatActivity {
     private String currentThumbnail = "url_miniatura_placeholder";
 
     private DatabaseReference dbCanciones;
+    private DatabaseReference dbListas;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -62,7 +61,6 @@ public class MainActivity extends AppCompatActivity {
         drawerLayout = findViewById(R.id.drawerLayout);
         navigationView = findViewById(R.id.navigationView);
 
-        // Configurar WebView
         webBuscador.getSettings().setJavaScriptEnabled(true);
         webBuscador.addJavascriptInterface(new WebAppInterface(), "Android");
         webBuscador.setWebViewClient(new WebViewClient() {
@@ -83,12 +81,11 @@ public class MainActivity extends AppCompatActivity {
         webBuscador.loadUrl("https://m.youtube.com");
 
         dbCanciones = FirebaseDatabase.getInstance().getReference("canciones");
+        dbListas = FirebaseDatabase.getInstance().getReference("listas_reproduccion");
 
         cargarColaDesdeFirebase();
 
-        // ------------------------------
-        // Reproducir desde FavoritosActivity
-        // ------------------------------
+        // Traído desde FavoritosActivity
         Intent intent = getIntent();
         if (intent != null && intent.hasExtra("videoId")) {
             String videoId = intent.getStringExtra("videoId");
@@ -103,15 +100,10 @@ public class MainActivity extends AppCompatActivity {
                         ? intent.getStringExtra("thumbnailUrl")
                         : "url_miniatura_placeholder";
 
-                // ------------------------------
-                // Ajustar cola para reproducir correctamente
-                // ------------------------------
                 if (!cola.contains(videoId)) {
-                    // Si no existe, añadir al final
                     cola.add(videoId);
                     indiceActual = cola.size() - 1;
                 } else {
-                    // Si ya existe, mover al final y actualizar índice
                     cola.remove(videoId);
                     cola.add(videoId);
                     indiceActual = cola.size() - 1;
@@ -119,9 +111,6 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-        // ------------------------------
-        // Botón cargar URL
-        // ------------------------------
         btnCargar.setOnClickListener(v -> {
             String url = etUrl.getText().toString().trim();
             String id = extraerYoutubeId(url);
@@ -136,30 +125,8 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        // ------------------------------
-        // Añadir a cola y Firebase
-        // ------------------------------
-        btnAñadirCola.setOnClickListener(v -> {
-            String url = etUrl.getText().toString().trim();
-            String id = extraerYoutubeId(url);
-            if (id == null) {
-                Toast.makeText(this, "URL no válida", Toast.LENGTH_SHORT).show();
-                return;
-            }
+        btnAñadirCola.setOnClickListener(v -> mostrarDialogoAñadirALista());
 
-            cola.add(id);
-
-            Cancion c = new Cancion(tvTitulo.getText().toString(), id, currentChannel, currentThumbnail);
-            c.asegurarCanal(); // extrae canal si estaba desconocido
-
-            dbCanciones.child(id).setValue(c)
-                    .addOnSuccessListener(a -> Toast.makeText(this, "Añadido a la cola y Firebase", Toast.LENGTH_SHORT).show())
-                    .addOnFailureListener(e -> Toast.makeText(this, "Error al añadir a Firebase", Toast.LENGTH_SHORT).show());
-        });
-
-        // ------------------------------
-        // Botones anterior/siguiente
-        // ------------------------------
         btnPrev.setOnClickListener(v -> {
             if (indiceActual > 0) {
                 indiceActual--;
@@ -174,20 +141,17 @@ public class MainActivity extends AppCompatActivity {
             } else Toast.makeText(this, "No hay más videos en la cola", Toast.LENGTH_SHORT).show();
         });
 
-        // ------------------------------
-        // Menú lateral
-        // ------------------------------
         btnMenu.setOnClickListener(v -> drawerLayout.openDrawer(GravityCompat.START));
         navigationView.setNavigationItemSelectedListener(item -> {
             if (item.getItemId() == R.id.nav_favoritos) {
                 startActivity(new Intent(MainActivity.this, FavoritosActivity.class));
             }
+            if (item.getItemId() == R.id.nav_listas) {
+                startActivity(new Intent(MainActivity.this, ListasReproduccionActivity.class));
+            }
             return true;
         });
 
-        // ------------------------------
-        // Guardar favorito
-        // ------------------------------
         btnGuardarFavorito.setOnClickListener(v -> {
             String url = webBuscador.getUrl();
             String id = extraerYoutubeId(url);
@@ -199,17 +163,102 @@ public class MainActivity extends AppCompatActivity {
             Cancion c = new Cancion(tvTitulo.getText().toString(), id, currentChannel, currentThumbnail);
             c.asegurarCanal();
 
-            FirebaseDatabase.getInstance().getReference("favoritos")
-                    .push()
-                    .setValue(c)
+            dbCanciones.push().setValue(c)
                     .addOnSuccessListener(a -> Toast.makeText(this, "Añadido a favoritos", Toast.LENGTH_SHORT).show())
                     .addOnFailureListener(e -> Toast.makeText(this, "Error al añadir favorito", Toast.LENGTH_SHORT).show());
         });
     }
 
-    // ------------------------------
-    // Cargar cola desde Firebase
-    // ------------------------------
+    // =====================================================
+    //    DIÁLOGO: AÑADIR CANCIÓN A UNA LISTA
+    // =====================================================
+    private void mostrarDialogoAñadirALista() {
+        String videoId = extraerYoutubeId(webBuscador.getUrl());
+        if (videoId == null) {
+            Toast.makeText(this, "No se pudo obtener el video", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        ArrayList<Lista> listasFirebase = new ArrayList<>();
+        ArrayList<String> nombresListas = new ArrayList<>();
+
+        dbListas.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                for (DataSnapshot ds : snapshot.getChildren()) {
+                    Lista lista = ds.getValue(Lista.class);
+                    if (lista != null) {
+                        listasFirebase.add(lista);
+                        nombresListas.add(lista.nombre);
+                    }
+                }
+                nombresListas.add("➕ Crear nueva lista");
+
+                AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                builder.setTitle("Añadir a lista de reproducción");
+
+                ArrayAdapter<String> adapter = new ArrayAdapter<>(MainActivity.this, android.R.layout.simple_list_item_1, nombresListas);
+                builder.setAdapter(adapter, (dialog, which) -> {
+                    String seleccion = nombresListas.get(which);
+                    if (seleccion.equals("➕ Crear nueva lista")) {
+                        mostrarDialogoCrearLista(videoId);
+                    } else {
+                        Lista listaSeleccionada = null;
+                        for (Lista l : listasFirebase) {
+                            if (l.nombre.equals(seleccion)) {
+                                listaSeleccionada = l;
+                                break;
+                            }
+                        }
+                        if (listaSeleccionada != null) {
+                            añadirCancionALista(videoId, listaSeleccionada.id_lista);
+                        }
+                    }
+                });
+                builder.show();
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {}
+        });
+    }
+
+    private void mostrarDialogoCrearLista(String videoId) {
+        EditText input = new EditText(this);
+        input.setHint("Nombre de la lista");
+
+        new AlertDialog.Builder(this)
+                .setTitle("Nueva lista de reproducción")
+                .setView(input)
+                .setPositiveButton("Crear", (dialog, which) -> {
+                    String nombreLista = input.getText().toString().trim();
+                    if (nombreLista.isEmpty()) {
+                        Toast.makeText(this, "Nombre no válido", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
+                    DatabaseReference nuevaListaRef = dbListas.push();
+                    Lista nuevaLista = new Lista("usuario_actual", nombreLista);
+                    nuevaListaRef.setValue(nuevaLista)
+                            .addOnSuccessListener(a -> añadirCancionALista(videoId, Integer.parseInt(nuevaListaRef.getKey())))
+                            .addOnFailureListener(e -> Toast.makeText(this, "Error al crear lista", Toast.LENGTH_SHORT).show());
+                })
+                .setNegativeButton("Cancelar", null)
+                .show();
+    }
+
+    private void añadirCancionALista(String videoId, int id_lista) {
+        Cancion c = new Cancion(tvTitulo.getText().toString(), videoId, currentChannel, currentThumbnail);
+        c.id_lista = id_lista;
+
+        dbCanciones.child(videoId).setValue(c)
+                .addOnSuccessListener(a -> Toast.makeText(this, "Añadido a la lista", Toast.LENGTH_SHORT).show())
+                .addOnFailureListener(e -> Toast.makeText(this, "Error al añadir a la lista", Toast.LENGTH_SHORT).show());
+    }
+
+    // =====================================================
+    //   FUNCIONES YA EXISTENTES
+    // =====================================================
     private void cargarColaDesdeFirebase() {
         dbCanciones.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
@@ -217,17 +266,7 @@ public class MainActivity extends AppCompatActivity {
                 cola.clear();
                 for (DataSnapshot ds : snapshot.getChildren()) {
                     String videoId = ds.getKey();
-                    if (videoId != null) {
-                        Cancion c = ds.getValue(Cancion.class);
-                        if (c != null) {
-                            c.asegurarCanal();
-                            // actualizar Firebase si el canal cambió
-                            if (!c.canal.equals(ds.child("canal").getValue(String.class))) {
-                                dbCanciones.child(videoId).setValue(c);
-                            }
-                        }
-                        cola.add(videoId);
-                    }
+                    if (videoId != null) cola.add(videoId);
                 }
                 if (!cola.isEmpty() && indiceActual == -1) {
                     indiceActual = 0;
@@ -272,9 +311,6 @@ public class MainActivity extends AppCompatActivity {
         else super.onBackPressed();
     }
 
-    // ------------------------------
-    // Interfaz de JavaScript
-    // ------------------------------
     public class WebAppInterface {
         @JavascriptInterface
         public void setTitle(String title) {
@@ -282,9 +318,7 @@ public class MainActivity extends AppCompatActivity {
                 tvTitulo.setText(title);
                 if ("Canal desconocido".equals(currentChannel)) {
                     int primerGuion = title.indexOf(" - ");
-                    if (primerGuion != -1) {
-                        currentChannel = title.substring(0, primerGuion).trim();
-                    }
+                    if (primerGuion != -1) currentChannel = title.substring(0, primerGuion).trim();
                 }
             });
         }

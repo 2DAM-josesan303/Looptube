@@ -26,6 +26,8 @@
         </activity>
         <activity android:name=".RegisterActivity" />
         <activity android:name=".MainActivity" />
+        <activity android:name=".ListasReproduccionActivity" />
+        <activity android:name=".CancionesListaActivity" />
         <activity android:name=".AdminActivity" />
         <activity android:name=".FavoritosActivity" />
         <activity android:name=".EditUserActivity" />

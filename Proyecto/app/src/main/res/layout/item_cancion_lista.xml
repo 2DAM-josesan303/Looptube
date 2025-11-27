@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="88dp"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:padding="8dp">
+
+    <ImageView
+        android:id="@+id/ivMiniaturaLista"
+        android:layout_width="70dp"
+        android:layout_height="70dp"
+        android:src="@drawable/ic_music"
+        android:contentDescription="miniatura" />
+
+    <TextView
+        android:id="@+id/tvTituloCancionLista"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:layout_marginStart="12dp"
+        android:text="Título canción"
+        android:textSize="16sp"
+        android:maxLines="2" />
+
+    <ImageButton
+        android:id="@+id/btnPlayCancionLista"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:background="@null"
+        android:src="@drawable/ic_play" />
+
+    <ImageButton
+        android:id="@+id/btnEliminarCancionLista"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:background="@null"
+        android:src="@drawable/ic_delete" />
+
+</LinearLayout>
