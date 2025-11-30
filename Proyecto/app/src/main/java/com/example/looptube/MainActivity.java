@@ -24,6 +24,8 @@ import com.google.android.material.navigation.NavigationView;
 import com.google.firebase.database.*;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -56,6 +58,8 @@ public class MainActivity extends AppCompatActivity {
         btnNext = findViewById(R.id.btnNext);
         btnMenu = findViewById(R.id.btnMenu);
         btnGuardarFavorito = findViewById(R.id.btnGuardarFavorito);
+        ImageButton btnAñadirALista = findViewById(R.id.btnAñadirALista);
+        btnAñadirALista.setOnClickListener(v -> mostrarDialogoAñadirALista());
         tvTitulo = findViewById(R.id.tvTitulo);
         webBuscador = findViewById(R.id.webBuscador);
         drawerLayout = findViewById(R.id.drawerLayout);
@@ -81,7 +85,7 @@ public class MainActivity extends AppCompatActivity {
         webBuscador.loadUrl("https://m.youtube.com");
 
         dbCanciones = FirebaseDatabase.getInstance().getReference("canciones");
-        dbListas = FirebaseDatabase.getInstance().getReference("listas_reproduccion");
+        dbListas = FirebaseDatabase.getInstance().getReference("listas");
 
         cargarColaDesdeFirebase();
 
@@ -169,9 +173,6 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    // =====================================================
-    //    DIÁLOGO: AÑADIR CANCIÓN A UNA LISTA
-    // =====================================================
     private void mostrarDialogoAñadirALista() {
         String videoId = extraerYoutubeId(webBuscador.getUrl());
         if (videoId == null) {
@@ -179,47 +180,41 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-        ArrayList<Lista> listasFirebase = new ArrayList<>();
-        ArrayList<String> nombresListas = new ArrayList<>();
-
         dbListas.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
+                ArrayList<String> nombresListas = new ArrayList<>();
+
                 for (DataSnapshot ds : snapshot.getChildren()) {
-                    Lista lista = ds.getValue(Lista.class);
-                    if (lista != null) {
-                        listasFirebase.add(lista);
-                        nombresListas.add(lista.nombre);
+                    if (ds.exists()) {
+                        nombresListas.add(ds.getKey());
                     }
                 }
+
                 nombresListas.add("➕ Crear nueva lista");
 
                 AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
                 builder.setTitle("Añadir a lista de reproducción");
 
-                ArrayAdapter<String> adapter = new ArrayAdapter<>(MainActivity.this, android.R.layout.simple_list_item_1, nombresListas);
+                ArrayAdapter<String> adapter = new ArrayAdapter<>(MainActivity.this,
+                        android.R.layout.simple_list_item_1, nombresListas);
+
                 builder.setAdapter(adapter, (dialog, which) -> {
                     String seleccion = nombresListas.get(which);
                     if (seleccion.equals("➕ Crear nueva lista")) {
                         mostrarDialogoCrearLista(videoId);
                     } else {
-                        Lista listaSeleccionada = null;
-                        for (Lista l : listasFirebase) {
-                            if (l.nombre.equals(seleccion)) {
-                                listaSeleccionada = l;
-                                break;
-                            }
-                        }
-                        if (listaSeleccionada != null) {
-                            añadirCancionALista(videoId, listaSeleccionada.id_lista);
-                        }
+                        añadirCancionALista(videoId, seleccion);
                     }
                 });
+
                 builder.show();
             }
 
             @Override
-            public void onCancelled(@NonNull DatabaseError error) {}
+            public void onCancelled(@NonNull DatabaseError error) {
+                Toast.makeText(MainActivity.this, "Error al cargar listas", Toast.LENGTH_SHORT).show();
+            }
         });
     }
 
@@ -237,21 +232,36 @@ public class MainActivity extends AppCompatActivity {
                         return;
                     }
 
-                    DatabaseReference nuevaListaRef = dbListas.push();
-                    Lista nuevaLista = new Lista("usuario_actual", nombreLista);
-                    nuevaListaRef.setValue(nuevaLista)
-                            .addOnSuccessListener(a -> añadirCancionALista(videoId, Integer.parseInt(nuevaListaRef.getKey())))
+                    // Crear la referencia a la nueva lista en "listas"
+                    DatabaseReference listaRef = dbListas.child(nombreLista);
+
+                    // Crear el objeto Cancion actual
+                    Cancion c = new Cancion(tvTitulo.getText().toString(), videoId, currentChannel, currentThumbnail);
+
+                    // Añadir la canción directamente al nuevo nodo
+                    Map<String, Object> cancionMap = new HashMap<>();
+                    cancionMap.put("titulo", c.titulo);
+                    cancionMap.put("canal", c.canal);
+                    cancionMap.put("url_miniatura", c.url_miniatura);
+                    cancionMap.put("youtubeId", c.youtubeId);
+
+                    Map<String, Object> nuevaLista = new HashMap<>();
+                    nuevaLista.put(videoId, cancionMap);
+
+                    listaRef.setValue(nuevaLista)
+                            .addOnSuccessListener(a -> Toast.makeText(this, "Lista creada y canción añadida", Toast.LENGTH_SHORT).show())
                             .addOnFailureListener(e -> Toast.makeText(this, "Error al crear lista", Toast.LENGTH_SHORT).show());
                 })
                 .setNegativeButton("Cancelar", null)
                 .show();
     }
 
-    private void añadirCancionALista(String videoId, int id_lista) {
+    private void añadirCancionALista(String videoId, String nombreLista) {
         Cancion c = new Cancion(tvTitulo.getText().toString(), videoId, currentChannel, currentThumbnail);
-        c.id_lista = id_lista;
 
-        dbCanciones.child(videoId).setValue(c)
+        DatabaseReference refCancion = dbListas.child(nombreLista).child(videoId);
+
+        refCancion.setValue(c)
                 .addOnSuccessListener(a -> Toast.makeText(this, "Añadido a la lista", Toast.LENGTH_SHORT).show())
                 .addOnFailureListener(e -> Toast.makeText(this, "Error al añadir a la lista", Toast.LENGTH_SHORT).show());
     }

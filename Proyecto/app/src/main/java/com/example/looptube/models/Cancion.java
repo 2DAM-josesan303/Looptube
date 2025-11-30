@@ -12,7 +12,8 @@ public class Cancion {
     public String key;
     public String canal;
     public String url_miniatura;
-    public int id_lista; // <-- añadir id_lista
+    public String id_firebase;
+    public int id_lista;
 
     public Cancion() {}
 

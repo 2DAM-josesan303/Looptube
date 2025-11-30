@@ -6,9 +6,6 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <!-- ===================== -->
-    <!--   CONTENIDO PRINCIPAL -->
-    <!-- ===================== -->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/mainContent"
         android:layout_width="match_parent"
@@ -81,7 +78,7 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"/>
 
-        <!-- BOTONES DE ACCIÓN -->
+        <!-- BOTONES -->
         <LinearLayout
             android:id="@+id/contenedorBotones"
             android:layout_width="0dp"
@@ -185,9 +182,7 @@
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
-    <!-- ===================== -->
-    <!--     MENÚ LATERAL      -->
-    <!-- ===================== -->
+    <!-- MENÚ LATERAL -->
     <com.google.android.material.navigation.NavigationView
         android:id="@+id/navigationView"
         android:layout_width="wrap_content"

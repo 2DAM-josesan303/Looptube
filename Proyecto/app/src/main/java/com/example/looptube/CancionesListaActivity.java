@@ -78,7 +78,7 @@ public class CancionesListaActivity extends AppCompatActivity {
 
         // Firebase
         dbCanciones = FirebaseDatabase.getInstance().getReference("canciones");
-        cargarCancionesDeLista();
+        cargarCancionesDeLista(nombreLista);
 
         // Botón de menú lateral
         btnMenu.setOnClickListener(v -> {
@@ -106,28 +106,27 @@ public class CancionesListaActivity extends AppCompatActivity {
     }
 
     // Cargar canciones de la lista desde Firebase
-    private void cargarCancionesDeLista() {
-        dbCanciones.orderByChild("id_lista").equalTo(listaId)
-                .addListenerForSingleValueEvent(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(@NonNull DataSnapshot snapshot) {
-                        canciones.clear();
-                        for (DataSnapshot ds : snapshot.getChildren()) {
-                            Cancion c = ds.getValue(Cancion.class);
-                            if (c != null) {
-                                c.asegurarCanal(); // Si tienes lógica para asegurarlo
-                                canciones.add(c);
-                            }
-                        }
-                        adapter.notifyDataSetChanged();
-                    }
+    private void cargarCancionesDeLista(String nombreLista) {
+        DatabaseReference refCanciones = FirebaseDatabase.getInstance()
+                .getReference("listas")
+                .child(nombreLista);
 
-                    @Override
-                    public void onCancelled(@NonNull DatabaseError error) {
-                        Toast.makeText(CancionesListaActivity.this,
-                                "Error al cargar canciones", Toast.LENGTH_SHORT).show();
-                    }
-                });
+        refCanciones.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                canciones.clear();
+                for (DataSnapshot ds : snapshot.getChildren()) {
+                    Cancion c = ds.getValue(Cancion.class);
+                    if (c != null) canciones.add(c);
+                }
+                adapter.notifyDataSetChanged();
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                Toast.makeText(CancionesListaActivity.this, "Error al cargar canciones", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     // Mostrar diálogo para eliminar canción
@@ -136,39 +135,24 @@ public class CancionesListaActivity extends AppCompatActivity {
                 .setTitle("Eliminar canción")
                 .setMessage("¿Quieres eliminar \"" + c.titulo + "\" de esta lista?")
                 .setPositiveButton("Eliminar", (dialog, which) -> {
-
-                    dbCanciones.child(c.youtubeId)
-                            .addListenerForSingleValueEvent(new ValueEventListener() {
-                                @Override
-                                public void onDataChange(@NonNull DataSnapshot snapshot) {
-                                    Cancion cancionFirebase = snapshot.getValue(Cancion.class);
-                                    if (cancionFirebase != null && cancionFirebase.id_lista == listaId) {
-                                        snapshot.getRef().removeValue()
-                                                .addOnSuccessListener(a -> {
-                                                    canciones.remove(pos);
-                                                    adapter.notifyItemRemoved(pos);
-                                                    Toast.makeText(CancionesListaActivity.this,
-                                                            "Canción eliminada", Toast.LENGTH_SHORT).show();
-                                                })
-                                                .addOnFailureListener(e ->
-                                                        Toast.makeText(CancionesListaActivity.this,
-                                                                "Error al eliminar", Toast.LENGTH_SHORT).show()
-                                                );
-                                    } else {
-                                        Toast.makeText(CancionesListaActivity.this,
-                                                "La canción no pertenece a esta lista", Toast.LENGTH_SHORT).show();
-                                    }
-                                }
-
-                                @Override
-                                public void onCancelled(@NonNull DatabaseError error) {
-                                    Toast.makeText(CancionesListaActivity.this,
-                                            "Error al acceder a la base de datos", Toast.LENGTH_SHORT).show();
-                                }
-                            });
-
+                    eliminarCancionDeLista(c.youtubeId, tvTituloLista.getText().toString(), pos);
                 })
                 .setNegativeButton("Cancelar", null)
                 .show();
+    }
+
+    private void eliminarCancionDeLista(String videoId, String nombreLista, int pos) {
+        DatabaseReference refCancion = FirebaseDatabase.getInstance()
+                .getReference("listas")
+                .child(nombreLista)
+                .child(videoId);
+
+        refCancion.removeValue()
+                .addOnSuccessListener(a -> {
+                    canciones.remove(pos);
+                    adapter.notifyItemRemoved(pos);
+                    Toast.makeText(this, "Canción eliminada", Toast.LENGTH_SHORT).show();
+                })
+                .addOnFailureListener(e -> Toast.makeText(this, "Error al eliminar", Toast.LENGTH_SHORT).show());
     }
 }
