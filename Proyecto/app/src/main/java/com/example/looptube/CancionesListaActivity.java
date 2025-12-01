@@ -64,9 +64,11 @@ public class CancionesListaActivity extends AppCompatActivity {
         adapter = new CancionesListaAdapter(canciones, new CancionesListaAdapter.Listener() {
             @Override
             public void onPlay(Cancion c) {
-                Toast.makeText(CancionesListaActivity.this,
-                        "Reproduciendo: " + c.titulo, Toast.LENGTH_SHORT).show();
-                // Aquí puedes implementar la reproducción real
+                Intent i = new Intent(CancionesListaActivity.this, MainActivity.class);
+                i.putExtra("videoId", c.youtubeId);
+                i.putExtra("channelName", c.canal);
+                i.putExtra("thumbnailUrl", c.url_miniatura);
+                startActivity(i);
             }
 
             @Override
