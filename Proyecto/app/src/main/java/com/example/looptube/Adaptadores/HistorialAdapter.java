@@ -21,6 +21,7 @@ public class HistorialAdapter extends RecyclerView.Adapter<HistorialAdapter.VH> 
 
     public interface Listener {
         void onPlay(Cancion c);
+        void onDelete(Cancion c, int position);
     }
 
     private final List<Cancion> items;
@@ -47,24 +48,27 @@ public class HistorialAdapter extends RecyclerView.Adapter<HistorialAdapter.VH> 
         // Reproducir al tocar la fila
         holder.itemView.setOnClickListener(v -> listener.onPlay(c));
 
-        // Eliminar solo de la cola (tabla "canciones")
+        // Eliminar canción individual de la cola (tabla "canciones")
         holder.btnEliminar.setOnClickListener(v -> {
             new AlertDialog.Builder(holder.itemView.getContext())
-                    .setTitle("Eliminar De El Historial")
-                    .setMessage("¿Seguro que quieres eliminar " + c.titulo + " de el historial?")
+                    .setTitle("Eliminar del Historial")
+                    .setMessage("¿Seguro que quieres eliminar \"" + c.titulo + "\" del historial?")
                     .setPositiveButton("Sí", (dialog, which) -> {
-                        if (c.youtubeId != null) {
+                        if (c.key != null) { // usar la key real de Firebase
                             FirebaseDatabase.getInstance().getReference("canciones")
-                                    .child(c.youtubeId)
+                                    .child(c.key)
                                     .removeValue()
                                     .addOnSuccessListener(a -> {
                                         items.remove(position);
                                         notifyItemRemoved(position);
                                         Toast.makeText(holder.itemView.getContext(),
-                                                "Canción eliminada de el historial", Toast.LENGTH_SHORT).show();
+                                                "Canción eliminada del historial", Toast.LENGTH_SHORT).show();
                                     })
                                     .addOnFailureListener(e -> Toast.makeText(holder.itemView.getContext(),
                                             "Error al eliminar", Toast.LENGTH_SHORT).show());
+                        } else {
+                            Toast.makeText(holder.itemView.getContext(),
+                                    "Error: clave nula", Toast.LENGTH_SHORT).show();
                         }
                     })
                     .setNegativeButton("Cancelar", null)

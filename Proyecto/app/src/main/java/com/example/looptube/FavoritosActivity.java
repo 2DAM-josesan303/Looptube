@@ -6,7 +6,7 @@ import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-
+import com.example.looptube.models.Cancion;
 import android.content.Intent;
 import android.os.Bundle;
 import android.widget.ImageButton;
@@ -82,17 +82,44 @@ public class FavoritosActivity extends AppCompatActivity {
         rvFavoritos.setAdapter(favoritoAdapter);
 
 
-        historialAdapter = new HistorialAdapter(listaHistorial, c -> {
-            c.asegurarCanal();
-            dbCanciones.child(c.youtubeId).setValue(c)
-                    .addOnSuccessListener(a -> {
-                        Intent i = new Intent(FavoritosActivity.this, MainActivity.class);
-                        i.putExtra("videoId", c.youtubeId);
-                        i.putExtra("channelName", c.canal);
-                        i.putExtra("thumbnailUrl", c.url_miniatura);
-                        startActivity(i);
-                    })
-                    .addOnFailureListener(e -> Toast.makeText(FavoritosActivity.this, "Error al reproducir la canción", Toast.LENGTH_SHORT).show());
+        historialAdapter = new HistorialAdapter(listaHistorial, new HistorialAdapter.Listener() {
+            @Override
+            public void onPlay(Cancion c) {
+                // Aseguramos que el canal esté correcto
+                c.asegurarCanal();
+
+                // Añadir a la cola en Firebase y reproducir
+                dbCanciones.child(c.youtubeId).setValue(c)
+                        .addOnSuccessListener(a -> {
+                            Intent i = new Intent(FavoritosActivity.this, MainActivity.class);
+                            i.putExtra("videoId", c.youtubeId);
+                            i.putExtra("channelName", c.canal);
+                            i.putExtra("thumbnailUrl", c.url_miniatura);
+                            startActivity(i);
+                        })
+                        .addOnFailureListener(e -> Toast.makeText(FavoritosActivity.this,
+                                "Error al reproducir la canción", Toast.LENGTH_SHORT).show());
+            }
+
+            @Override
+            public void onDelete(Cancion c, int position) {
+                // Eliminar canción individual de la cola (tabla "canciones")
+                if (c.key != null) {
+                    dbCanciones.child(c.key)
+                            .removeValue()
+                            .addOnSuccessListener(a -> {
+                                listaHistorial.remove(position);
+                                historialAdapter.notifyItemRemoved(position);
+                                Toast.makeText(FavoritosActivity.this,
+                                        "Canción eliminada del historial", Toast.LENGTH_SHORT).show();
+                            })
+                            .addOnFailureListener(e -> Toast.makeText(FavoritosActivity.this,
+                                    "Error al eliminar", Toast.LENGTH_SHORT).show());
+                } else {
+                    Toast.makeText(FavoritosActivity.this,
+                            "Error: clave nula", Toast.LENGTH_SHORT).show();
+                }
+            }
         });
         rvHistorial.setAdapter(historialAdapter);
 
@@ -104,18 +131,25 @@ public class FavoritosActivity extends AppCompatActivity {
                 "Borrar Historial",
                 "¿Seguro que quieres borrar todo el historial?",
                 () -> {
-                    dbCanciones.removeValue()
-                            .addOnSuccessListener(a -> {
-                                listaHistorial.clear();
-                                historialAdapter.notifyDataSetChanged();
-                                Toast.makeText(FavoritosActivity.this,
-                                        "Historial borrado correctamente", Toast.LENGTH_SHORT).show();
-                            })
-                            .addOnFailureListener(e -> Toast.makeText(FavoritosActivity.this,
-                                    "Error al borrar la historial: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+                    dbCanciones.addListenerForSingleValueEvent(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(@NonNull DataSnapshot snapshot) {
+                            for (DataSnapshot child : snapshot.getChildren()) {
+                                child.getRef().removeValue(); // ✔ Borra cada entrada real
+                            }
+
+                            listaHistorial.clear();
+                            historialAdapter.notifyDataSetChanged();
+
+                            Toast.makeText(FavoritosActivity.this,
+                                    "Historial borrado correctamente", Toast.LENGTH_SHORT).show();
+                        }
+
+                        @Override
+                        public void onCancelled(@NonNull DatabaseError error) {}
+                    });
                 }
         ));
-
 
         btnMenu.setOnClickListener(v -> drawerLayout.openDrawer(GravityCompat.START));
 
@@ -156,7 +190,7 @@ public class FavoritosActivity extends AppCompatActivity {
     }
 
     private void cargarHistorial() {
-        dbCanciones.addValueEventListener(new ValueEventListener() {
+        dbCanciones.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 listaHistorial.clear();

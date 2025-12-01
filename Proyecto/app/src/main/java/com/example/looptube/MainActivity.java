@@ -37,6 +37,8 @@ public class MainActivity extends AppCompatActivity {
     private DrawerLayout drawerLayout;
     private NavigationView navigationView;
 
+    private Cancion cancionActual;
+
     private ArrayList<String> cola = new ArrayList<>();
     private int indiceActual = -1;
 
@@ -79,6 +81,12 @@ public class MainActivity extends AppCompatActivity {
                         "var vid = new URL(window.location.href).searchParams.get('v');" +
                         "if (vid) Android.setThumbnail('https://img.youtube.com/vi/' + vid + '/hqdefault.jpg');" +
                         "})();");
+                // Intento de reproducir automáticamente con sonido
+                view.evaluateJavascript(
+                        "var video = document.querySelector('video');" +
+                                "if (video) { video.muted = false; video.play().catch(e => console.log('Autoplay fallido:', e)); }",
+                        null
+                );
             }
         });
 
@@ -104,6 +112,13 @@ public class MainActivity extends AppCompatActivity {
                         ? intent.getStringExtra("thumbnailUrl")
                         : "url_miniatura_placeholder";
 
+                cancionActual = new Cancion(
+                        tvTitulo.getText().toString(),
+                        videoId,
+                        currentChannel,
+                        currentThumbnail
+                );
+
                 if (!cola.contains(videoId)) {
                     cola.add(videoId);
                     indiceActual = cola.size() - 1;
@@ -123,14 +138,42 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
             reproducirVideo(id);
+
+            cancionActual = new Cancion(
+                    tvTitulo.getText().toString(),
+                    id,
+                    currentChannel,
+                    currentThumbnail
+            );
+
             if (!cola.contains(id)) {
                 cola.add(id);
                 indiceActual = cola.size() - 1;
             }
         });
 
-        btnAñadirCola.setOnClickListener(v -> mostrarDialogoAñadirALista());
+        btnAñadirCola = findViewById(R.id.btnAñadirCola);
 
+        btnAñadirCola.setOnClickListener(v -> {
+            String url = webBuscador.getUrl();
+            String videoId = extraerYoutubeId(url);
+
+            if (videoId == null) {
+                Toast.makeText(MainActivity.this, "No se pudo obtener el video", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            Cancion c = new Cancion(
+                    tvTitulo.getText().toString(),
+                    videoId,
+                    currentChannel,
+                    currentThumbnail
+            );
+
+            c.asegurarCanal();
+
+            agregarACola(c);
+        });
         btnPrev.setOnClickListener(v -> {
             if (indiceActual > 0) {
                 indiceActual--;
@@ -171,6 +214,28 @@ public class MainActivity extends AppCompatActivity {
                     .addOnSuccessListener(a -> Toast.makeText(this, "Añadido a favoritos", Toast.LENGTH_SHORT).show())
                     .addOnFailureListener(e -> Toast.makeText(this, "Error al añadir favorito", Toast.LENGTH_SHORT).show());
         });
+    }
+
+    private void agregarACola(Cancion cancion) {
+        DatabaseReference ref = FirebaseDatabase.getInstance().getReference("canciones");
+
+        String id = ref.push().getKey();
+
+        HashMap<String, Object> data = new HashMap<>();
+        data.put("youtubeId", cancion.youtubeId);
+        data.put("titulo", cancion.titulo);
+        data.put("canal", cancion.canal);
+        data.put("url_miniatura", cancion.url_miniatura);
+        data.put("id_video", 0);
+        data.put("id_lista", 0);
+
+        ref.child(id).setValue(data)
+                .addOnSuccessListener(a -> {
+                    Toast.makeText(MainActivity.this, "Añadido a la cola", Toast.LENGTH_SHORT).show();
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(MainActivity.this, "Error al añadir", Toast.LENGTH_SHORT).show();
+                });
     }
 
     private void mostrarDialogoAñadirALista() {
@@ -270,14 +335,17 @@ public class MainActivity extends AppCompatActivity {
     //   FUNCIONES YA EXISTENTES
     // =====================================================
     private void cargarColaDesdeFirebase() {
-        dbCanciones.addListenerForSingleValueEvent(new ValueEventListener() {
+        dbCanciones.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 cola.clear();
+
                 for (DataSnapshot ds : snapshot.getChildren()) {
-                    String videoId = ds.getKey();
+                    String videoId = ds.child("youtubeId").getValue(String.class);
                     if (videoId != null) cola.add(videoId);
                 }
+
+                // Si hay canciones y no hay una reproduciéndose, reproducir la primera
                 if (!cola.isEmpty() && indiceActual == -1) {
                     indiceActual = 0;
                     reproducirVideo(cola.get(indiceActual));
@@ -326,6 +394,10 @@ public class MainActivity extends AppCompatActivity {
         public void setTitle(String title) {
             runOnUiThread(() -> {
                 tvTitulo.setText(title);
+                if (cancionActual != null) {
+                    cancionActual.titulo = title;
+                }
+
                 if ("Canal desconocido".equals(currentChannel)) {
                     int primerGuion = title.indexOf(" - ");
                     if (primerGuion != -1) currentChannel = title.substring(0, primerGuion).trim();
@@ -336,11 +408,17 @@ public class MainActivity extends AppCompatActivity {
         @JavascriptInterface
         public void setChannel(String canal) {
             runOnUiThread(() -> currentChannel = canal);
+            if (cancionActual != null) {
+                cancionActual.canal = canal;
+            }
         }
 
         @JavascriptInterface
         public void setThumbnail(String url) {
             runOnUiThread(() -> currentThumbnail = url);
+            if (cancionActual != null) {
+                cancionActual.url_miniatura = url;
+            }
         }
     }
 }
