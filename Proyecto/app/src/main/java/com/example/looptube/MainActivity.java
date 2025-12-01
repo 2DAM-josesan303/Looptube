@@ -48,6 +48,8 @@ public class MainActivity extends AppCompatActivity {
     private DatabaseReference dbCanciones;
     private DatabaseReference dbListas;
 
+    private DatabaseReference dbFavoritos;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -94,6 +96,7 @@ public class MainActivity extends AppCompatActivity {
 
         dbCanciones = FirebaseDatabase.getInstance().getReference("canciones");
         dbListas = FirebaseDatabase.getInstance().getReference("listas");
+        dbFavoritos = FirebaseDatabase.getInstance().getReference("favoritos");
 
         cargarColaDesdeFirebase();
 
@@ -210,9 +213,26 @@ public class MainActivity extends AppCompatActivity {
             Cancion c = new Cancion(tvTitulo.getText().toString(), id, currentChannel, currentThumbnail);
             c.asegurarCanal();
 
-            dbCanciones.push().setValue(c)
-                    .addOnSuccessListener(a -> Toast.makeText(this, "Añadido a favoritos", Toast.LENGTH_SHORT).show())
-                    .addOnFailureListener(e -> Toast.makeText(this, "Error al añadir favorito", Toast.LENGTH_SHORT).show());
+            // Comprueba si el video esta ya en favoritos
+            dbFavoritos.orderByChild("youtubeId").equalTo(id)
+                    .addListenerForSingleValueEvent(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(@NonNull DataSnapshot snapshot) {
+                            if (snapshot.exists()) {
+                                Toast.makeText(MainActivity.this, "El video ya está en favoritos", Toast.LENGTH_SHORT).show();
+                            } else {
+                                // No está en favoritos, se añade
+                                dbFavoritos.push().setValue(c)
+                                        .addOnSuccessListener(a -> Toast.makeText(MainActivity.this, "Añadido a favoritos", Toast.LENGTH_SHORT).show())
+                                        .addOnFailureListener(e -> Toast.makeText(MainActivity.this, "Error al añadir favorito", Toast.LENGTH_SHORT).show());
+                            }
+                        }
+
+                        @Override
+                        public void onCancelled(@NonNull DatabaseError error) {
+                            Toast.makeText(MainActivity.this, "Error al comprobar favoritos", Toast.LENGTH_SHORT).show();
+                        }
+                    });
         });
     }
 
