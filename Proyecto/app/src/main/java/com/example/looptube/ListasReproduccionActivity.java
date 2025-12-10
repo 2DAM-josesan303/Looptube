@@ -19,6 +19,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.looptube.Adaptadores.PlaylistAdapter;
 import com.example.looptube.models.Cancion;
 import com.google.android.material.navigation.NavigationView;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.*;
 
 import java.util.ArrayList;
@@ -61,11 +62,24 @@ public class ListasReproduccionActivity extends AppCompatActivity {
 
         navigationView.setNavigationItemSelectedListener(item -> {
             int id = item.getItemId();
-            if (id == R.id.nav_listas) drawerLayout.closeDrawer(GravityCompat.START);
-            else if (id == R.id.nav_busqueda)
-                startActivity(new Intent(this, MainActivity.class));
-            else if (id == R.id.nav_favoritos)
-                startActivity(new Intent(this, FavoritosActivity.class));
+
+            if (id == R.id.nav_listas) {
+                drawerLayout.closeDrawer(GravityCompat.START);
+
+            } else if (id == R.id.nav_busqueda) {
+                startActivity(new Intent(ListasReproduccionActivity.this, MainActivity.class));
+
+            } else if (id == R.id.nav_favoritos) {
+                startActivity(new Intent(ListasReproduccionActivity.this, FavoritosActivity.class));
+
+            } else if (id == R.id.nav_logout) {
+                FirebaseAuth.getInstance().signOut();
+                Intent logoutIntent = new Intent(ListasReproduccionActivity.this, LoginActivity.class);
+                logoutIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+                startActivity(logoutIntent);
+                finish();
+            }
+
             drawerLayout.closeDrawer(GravityCompat.START);
             return true;
         });

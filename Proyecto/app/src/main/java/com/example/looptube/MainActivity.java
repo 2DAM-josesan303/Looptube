@@ -21,6 +21,7 @@ import android.widget.Toast;
 import com.example.looptube.models.Cancion;
 import com.example.looptube.models.Lista;
 import com.google.android.material.navigation.NavigationView;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.*;
 
 import java.util.ArrayList;
@@ -199,6 +200,16 @@ public class MainActivity extends AppCompatActivity {
             if (item.getItemId() == R.id.nav_listas) {
                 startActivity(new Intent(MainActivity.this, ListasReproduccionActivity.class));
             }
+
+            if (item.getItemId() == R.id.nav_logout) {
+                FirebaseAuth.getInstance().signOut();
+                Intent logoutIntent = new Intent(MainActivity.this, LoginActivity.class);
+                logoutIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+                startActivity(logoutIntent);
+                finish();
+            }
+
+            drawerLayout.closeDrawer(GravityCompat.START);
             return true;
         });
 

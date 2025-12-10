@@ -16,6 +16,7 @@ import com.example.looptube.Adaptadores.FavoritoAdapter;
 import com.example.looptube.Adaptadores.HistorialAdapter;
 import com.example.looptube.models.Cancion;
 import com.google.android.material.navigation.NavigationView;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -162,7 +163,14 @@ public class FavoritosActivity extends AppCompatActivity {
                 startActivity(new Intent(FavoritosActivity.this, MainActivity.class));
             } else if (id == R.id.nav_listas) {
                 startActivity(new Intent(FavoritosActivity.this, ListasReproduccionActivity.class));
+            } else if (id == R.id.nav_logout) {
+                FirebaseAuth.getInstance().signOut();
+                Intent logoutIntent = new Intent(FavoritosActivity.this, LoginActivity.class);
+                logoutIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+                startActivity(logoutIntent);
+                finish();
             }
+
 
             drawerLayout.closeDrawer(GravityCompat.START);
             return true;
