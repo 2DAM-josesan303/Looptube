@@ -1,21 +1,27 @@
 package com.example.looptube;
 
-
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.room.Room;
 
+import com.example.looptube.models.Usuario;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.example.looptube.models.Usuario;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.List;
 
 public class RegisterActivity extends AppCompatActivity {
@@ -24,37 +30,38 @@ public class RegisterActivity extends AppCompatActivity {
     private DatabaseReference mDatabase;
 
     private EditText etEmail, etPassword, etConfirmPassword;
-    private Button btnRegister;
-    private boolean creandoUsuario = false;
+    private Button btnRegister, btnChangePhoto;
+
+    private Uri fotoSeleccionadaUri;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.registro);
 
         mAuth = FirebaseAuth.getInstance();
-
-//        if (mAuth.getCurrentUser() != null) {
-//            Toast.makeText(this, "Ya estás registrado. Redirigiendo al inicio de sesión...", Toast.LENGTH_LONG).show();
-//            // Redirigir al login
-//            startActivity(new Intent(this, LoginActivity.class));
-//            finish(); // Cerrar RegisterActivity
-//            return;
-//        }
-
         mDatabase = FirebaseDatabase.getInstance().getReference();
 
         etEmail = findViewById(R.id.etEmail);
         etPassword = findViewById(R.id.etPassword);
         etConfirmPassword = findViewById(R.id.etConfirmPassword);
         btnRegister = findViewById(R.id.btnRegister);
-        creandoUsuario = getIntent().getBooleanExtra("creandoUsuario", false);
+        btnChangePhoto = findViewById(R.id.btnChangePhoto);
 
-        if (!creandoUsuario && mAuth.getCurrentUser() != null) {
-            Toast.makeText(this, "Ya estás registrado. Redirigiendo al inicio de sesión...", Toast.LENGTH_LONG).show();
-            startActivity(new Intent(this, LoginActivity.class));
-            finish();
-            return;
-        }
+        ActivityResultLauncher<String> seleccionarImagenLauncher =
+                registerForActivityResult(
+                        new ActivityResultContracts.GetContent(),
+                        uri -> {
+                            if (uri != null) {
+                                fotoSeleccionadaUri = uri;
+                                Toast.makeText(this, "Imagen seleccionada", Toast.LENGTH_SHORT).show();
+                            }
+                        }
+                );
+
+        btnChangePhoto.setOnClickListener(v ->
+                seleccionarImagenLauncher.launch("image/*")
+        );
 
         btnRegister.setOnClickListener(v -> registerUser());
     }
@@ -75,62 +82,80 @@ public class RegisterActivity extends AppCompatActivity {
         }
 
         mAuth.createUserWithEmailAndPassword(email, password)
-                .addOnCompleteListener(task -> {
-                    if (task.isSuccessful()) {
-                        String userId = mAuth.getCurrentUser().getUid();
-                        String nombre = email.split("@")[0];
+                .addOnSuccessListener(authResult -> {
 
-                        Usuario usuario = new Usuario();
-                        usuario.nombre = nombre;
-                        usuario.email = email;
-                        usuario.contraseña_hash = password;
-                        usuario.rol = "usuario";
+                    String userId = authResult.getUser().getUid();
 
-                        // Guardar en Firebase
-                        mDatabase.child("usuarios").child(userId).setValue(usuario)
-                                .addOnCompleteListener(dbTask -> {
-                                    if (dbTask.isSuccessful()) {
-                                        Toast.makeText(this, "Usuario Registrado", Toast.LENGTH_LONG).show();
-                                        if (creandoUsuario) {
-                                            startActivity(new Intent(this, AdminActivity.class));
-                                            finish();
-                                            return;
-                                        }
-                                        mAuth.signOut();
-                                        // Redirigir al login
-                                        Intent intent = new Intent(this, LoginActivity.class);
-                                        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
-                                        startActivity(intent);
-                                        finish();
-                                    } else {
-                                        Toast.makeText(this, "Error al guardar en Firebase: " + dbTask.getException().getMessage(), Toast.LENGTH_SHORT).show();
-                                    }
-                                });
+                    Usuario usuario = new Usuario();
+                    usuario.nombre = email.split("@")[0];
+                    usuario.email = email;
+                    usuario.contraseña_hash = password;
+                    usuario.rol = "usuario";
 
-                        //Operacion guardar en SQLite
-                        com.example.looptube.AppDatabase db = Room.databaseBuilder(
-                                        getApplicationContext(),
-                                        com.example.looptube.AppDatabase.class,
-                                        "looptube_db")
-                                .allowMainThreadQueries()
-                                .build();
-                        Log.d("SQLiteDebug", "Intentando insertar usuario en SQLite...");
-
-                        try {
-                            db.dao().insertarUsuario(usuario);
-                            Log.d("SQLiteDebug", "Usuario insertado correctamente en SQLite: " + usuario.email);
-                        } catch (Exception e) {
-                            Log.e("SQLiteDebug", "Error al insertar usuario en SQLite", e);
-                        }
-                        List<Usuario> usuarios = db.dao().obtenerUsuarios();
-                        Log.d("SQLiteDebug", "Usuarios actuales en SQLite: " + usuarios.size());
-                        for (Usuario u : usuarios) {
-                            Log.d("SQLiteDebug", "→ " + u.id + " | " + u.email + " | " + u.rol);
-                        }
-
+                    if (fotoSeleccionadaUri != null) {
+                        Uri uriInterna = copiarImagenInterna(fotoSeleccionadaUri);
+                        usuario.fotoPerfil = uriInterna != null
+                                ? uriInterna.toString()
+                                : "default";
                     } else {
-                        Toast.makeText(this, "Error al registrar: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                        usuario.fotoPerfil = "default";
                     }
+
+                    guardarUsuarioEnFirebase(userId, usuario);
+                    guardarUsuarioEnSQLite(usuario);
+                })
+                .addOnFailureListener(e ->
+                        Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show()
+                );
+    }
+
+    private Uri copiarImagenInterna(Uri uriOriginal) {
+        try {
+            InputStream in = getContentResolver().openInputStream(uriOriginal);
+            File archivo = new File(getFilesDir(), "perfil_" + System.currentTimeMillis() + ".jpg");
+
+            OutputStream out = new FileOutputStream(archivo);
+            byte[] buffer = new byte[1024];
+            int len;
+            while ((len = in.read(buffer)) > 0) {
+                out.write(buffer, 0, len);
+            }
+
+            in.close();
+            out.close();
+
+            return Uri.fromFile(archivo);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    private void guardarUsuarioEnFirebase(String userId, Usuario usuario) {
+        mDatabase.child("usuarios").child(userId).setValue(usuario)
+                .addOnSuccessListener(a -> {
+                    Toast.makeText(this, "Usuario registrado", Toast.LENGTH_LONG).show();
+                    FirebaseAuth.getInstance().signOut();
+                    startActivity(new Intent(this, LoginActivity.class));
+                    finish();
                 });
+    }
+
+    private void guardarUsuarioEnSQLite(Usuario usuario) {
+        try {
+            AppDatabase db = Room.databaseBuilder(
+                            getApplicationContext(),
+                            AppDatabase.class,
+                            "looptube_db")
+                    .allowMainThreadQueries()
+                    .build();
+
+            db.dao().insertarUsuario(usuario);
+
+            List<Usuario> usuarios = db.dao().obtenerUsuarios();
+            Log.d("SQLiteDebug", "Usuarios SQLite: " + usuarios.size());
+        } catch (Exception e) {
+            Log.e("SQLiteDebug", "Error SQLite", e);
+        }
     }
 }

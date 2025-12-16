@@ -11,14 +11,16 @@ public class Usuario {
     public String firebaseId;
     public String nombre;
     public String email;
+    public String fotoPerfil;
     public String contraseña_hash;
     public String rol;
 
     public Usuario() {}
 
-    public Usuario(String nombre, String email, String contraseña_hash, String rol) {
+    public Usuario(String nombre, String email, String contraseña_hash,String fotoPerfil, String rol) {
         this.nombre = nombre;
         this.email = email;
+        this.fotoPerfil = fotoPerfil;
         this.contraseña_hash = contraseña_hash;
         this.rol = rol;
     }

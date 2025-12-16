@@ -7,6 +7,7 @@ import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
@@ -17,6 +18,10 @@ import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.ImageView;
+
+import com.bumptech.glide.Glide;
+import com.google.firebase.auth.FirebaseUser;
 
 import com.example.looptube.models.Cancion;
 import com.example.looptube.models.Lista;
@@ -38,6 +43,8 @@ public class MainActivity extends AppCompatActivity {
     private DrawerLayout drawerLayout;
     private NavigationView navigationView;
 
+    private ImageButton btnPerfil;
+
     private Cancion cancionActual;
 
     private ArrayList<String> cola = new ArrayList<>();
@@ -55,7 +62,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
+        cargarFotoPerfilUsuario();
         etUrl = findViewById(R.id.etUrl);
         btnCargar = findViewById(R.id.btnCargar);
         btnAñadirCola = findViewById(R.id.btnAñadirCola);
@@ -63,6 +70,7 @@ public class MainActivity extends AppCompatActivity {
         btnNext = findViewById(R.id.btnNext);
         btnMenu = findViewById(R.id.btnMenu);
         btnGuardarFavorito = findViewById(R.id.btnGuardarFavorito);
+        btnPerfil = findViewById(R.id.btnPerfil);
         ImageButton btnAñadirALista = findViewById(R.id.btnAñadirALista);
         btnAñadirALista.setOnClickListener(v -> mostrarDialogoAñadirALista());
         tvTitulo = findViewById(R.id.tvTitulo);
@@ -362,9 +370,6 @@ public class MainActivity extends AppCompatActivity {
                 .addOnFailureListener(e -> Toast.makeText(this, "Error al añadir a la lista", Toast.LENGTH_SHORT).show());
     }
 
-    // =====================================================
-    //   FUNCIONES YA EXISTENTES
-    // =====================================================
     private void cargarColaDesdeFirebase() {
         dbCanciones.addValueEventListener(new ValueEventListener() {
             @Override
@@ -388,8 +393,49 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+
+
+
     private void reproducirVideo(String id) {
         webBuscador.loadUrl("https://m.youtube.com/watch?v=" + id);
+    }
+
+    private void cargarFotoPerfilUsuario() {
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null) return;
+
+        DatabaseReference ref = FirebaseDatabase.getInstance()
+                .getReference("usuarios")
+                .child(user.getUid())
+                .child("fotoPerfil");
+
+        ref.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                if (!snapshot.exists()) {
+                    btnPerfil.setImageResource(R.drawable.circle_background);
+                    return;
+                }
+
+                String uriString = snapshot.getValue(String.class);
+
+                if (uriString != null && !uriString.equals("default")) {
+                    Glide.with(MainActivity.this)
+                            .load(Uri.parse(uriString))
+                            .circleCrop()
+                            .into(btnPerfil);
+                } else {
+                    btnPerfil.setImageResource(R.drawable.circle_background);
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                Toast.makeText(MainActivity.this,
+                        "Error al cargar foto de perfil",
+                        Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     private String extraerYoutubeId(String url) {
