@@ -54,7 +54,6 @@
                     android:layout_height="45dp"
                     android:background="@drawable/circle_background"
                     android:scaleType="centerInside"
-                    app:tint="@android:color/white"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintTop_toTopOf="parent"
                     app:layout_constraintBottom_toBottomOf="parent"/>

@@ -14,6 +14,7 @@ import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
 import com.example.looptube.Adaptadores.CancionesListaAdapter;
 import com.example.looptube.models.Cancion;
 import com.google.android.material.navigation.NavigationView;
@@ -35,39 +36,54 @@ public class CancionesListaActivity extends AppCompatActivity {
     private DatabaseReference dbCanciones;
 
     private TextView tvTituloLista;
-    private ImageButton btnMenu;
+    private ImageButton btnMenu, btnPerfil;
     private DrawerLayout drawerLayout;
     private NavigationView navigationView;
 
-    private int listaId; // id_lista de la lista seleccionada
+    private String uidUsuario; // UID recibido desde MainActivity/ListasReproduccionActivity
+    private String nombreLista;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_canciones_lista);
 
-        // Obtener id_lista y nombre de la lista desde el intent
-        listaId = getIntent().getIntExtra("id_lista", -1);
-        String nombreLista = getIntent().getStringExtra("nombre_lista");
+        // 🔹 Recibir UID y nombre de lista desde Intent
+        uidUsuario = getIntent().getStringExtra("uid_usuario");
+        if (uidUsuario == null) {
+            Toast.makeText(this, "No se recibió el UID del usuario", Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
+
+        nombreLista = getIntent().getStringExtra("nombre_lista");
+        if (nombreLista == null) {
+            Toast.makeText(this, "No se recibió el nombre de la lista", Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
 
         // Inicializar vistas
         tvTituloLista = findViewById(R.id.tvTituloCancionesLista);
         rvCanciones = findViewById(R.id.rvCancionesLista);
         btnMenu = findViewById(R.id.btnMenu);
+        btnPerfil = findViewById(R.id.btnPerfil);
         drawerLayout = findViewById(R.id.drawerLayoutCancionesLista);
         navigationView = findViewById(R.id.navigationViewCancionesLista);
 
         tvTituloLista.setText(nombreLista);
+        cargarFotoPerfilUsuario();
 
-        // Configurar RecyclerView
         rvCanciones.setLayoutManager(new LinearLayoutManager(this));
         adapter = new CancionesListaAdapter(canciones, new CancionesListaAdapter.Listener() {
             @Override
             public void onPlay(Cancion c) {
                 Intent i = new Intent(CancionesListaActivity.this, MainActivity.class);
+                i.putExtra("uid_usuario", uidUsuario);
                 i.putExtra("videoId", c.youtubeId);
                 i.putExtra("channelName", c.canal);
                 i.putExtra("thumbnailUrl", c.url_miniatura);
+                i.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
                 startActivity(i);
             }
 
@@ -78,28 +94,37 @@ public class CancionesListaActivity extends AppCompatActivity {
         });
         rvCanciones.setAdapter(adapter);
 
-        // Firebase
-        dbCanciones = FirebaseDatabase.getInstance().getReference("canciones");
-        cargarCancionesDeLista(nombreLista);
+        dbCanciones = FirebaseDatabase.getInstance()
+                .getReference("usuarios")
+                .child(uidUsuario)
+                .child("listas")
+                .child(nombreLista);
 
-        // Botón de menú lateral
-        btnMenu.setOnClickListener(v -> {
-            if (drawerLayout != null) {
-                drawerLayout.openDrawer(GravityCompat.START);
-            }
-        });
+        cargarCancionesDeLista();
+
+        btnMenu.setOnClickListener(v -> drawerLayout.openDrawer(GravityCompat.START));
 
         // Configurar navegación del drawer
         navigationView.setNavigationItemSelectedListener(item -> {
             int id = item.getItemId();
 
             if (id == R.id.nav_busqueda) {
-                startActivity(new Intent(CancionesListaActivity.this, MainActivity.class));
+                Intent i = new Intent(CancionesListaActivity.this, MainActivity.class);
+                i.putExtra("uid_usuario", uidUsuario);
+                startActivity(i);
             } else if (id == R.id.nav_favoritos) {
-                startActivity(new Intent(CancionesListaActivity.this, FavoritosActivity.class));
+                Intent i = new Intent(CancionesListaActivity.this, FavoritosActivity.class);
+                i.putExtra("uid_usuario", uidUsuario);
+                startActivity(i);
             } else if (id == R.id.nav_listas) {
-                // Si esta Activity fuera la de Listas, cerrar drawer en lugar de abrirla
-                drawerLayout.closeDrawer(GravityCompat.START);
+                Intent i = new Intent(CancionesListaActivity.this, ListasReproduccionActivity.class);
+                i.putExtra("uid_usuario", uidUsuario);
+                startActivity(i);
+            } else if (id == R.id.nav_logout) {
+                Intent logoutIntent = new Intent(CancionesListaActivity.this, LoginActivity.class);
+                logoutIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+                startActivity(logoutIntent);
+                finish();
             }
 
             drawerLayout.closeDrawer(GravityCompat.START);
@@ -107,13 +132,8 @@ public class CancionesListaActivity extends AppCompatActivity {
         });
     }
 
-    // Cargar canciones de la lista desde Firebase
-    private void cargarCancionesDeLista(String nombreLista) {
-        DatabaseReference refCanciones = FirebaseDatabase.getInstance()
-                .getReference("listas")
-                .child(nombreLista);
-
-        refCanciones.addListenerForSingleValueEvent(new ValueEventListener() {
+    private void cargarCancionesDeLista() {
+        dbCanciones.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 canciones.clear();
@@ -131,21 +151,20 @@ public class CancionesListaActivity extends AppCompatActivity {
         });
     }
 
-    // Mostrar diálogo para eliminar canción
     private void mostrarDialogoEliminar(Cancion c, int pos) {
         new AlertDialog.Builder(this)
                 .setTitle("Eliminar canción")
                 .setMessage("¿Quieres eliminar \"" + c.titulo + "\" de esta lista?")
-                .setPositiveButton("Eliminar", (dialog, which) -> {
-                    eliminarCancionDeLista(c.youtubeId, tvTituloLista.getText().toString(), pos);
-                })
+                .setPositiveButton("Eliminar", (dialog, which) -> eliminarCancionDeLista(c.youtubeId, pos))
                 .setNegativeButton("Cancelar", null)
                 .show();
     }
 
-    private void eliminarCancionDeLista(String videoId, String nombreLista, int pos) {
+    private void eliminarCancionDeLista(String videoId, int pos) {
         DatabaseReference refCancion = FirebaseDatabase.getInstance()
-                .getReference("listas")
+                .getReference("usuarios")
+                .child(uidUsuario)
+                .child("listas")
                 .child(nombreLista)
                 .child(videoId);
 
@@ -156,5 +175,36 @@ public class CancionesListaActivity extends AppCompatActivity {
                     Toast.makeText(this, "Canción eliminada", Toast.LENGTH_SHORT).show();
                 })
                 .addOnFailureListener(e -> Toast.makeText(this, "Error al eliminar", Toast.LENGTH_SHORT).show());
+    }
+
+    private void cargarFotoPerfilUsuario() {
+        DatabaseReference refFoto = FirebaseDatabase.getInstance()
+                .getReference("usuarios")
+                .child(uidUsuario)
+                .child("fotoPerfil");
+
+        refFoto.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                if (!snapshot.exists()) {
+                    btnPerfil.setImageResource(R.drawable.circle_background);
+                    return;
+                }
+                String uriString = snapshot.getValue(String.class);
+                if (uriString != null && !uriString.equals("default")) {
+                    Glide.with(CancionesListaActivity.this)
+                            .load(uriString)
+                            .circleCrop()
+                            .into(btnPerfil);
+                } else {
+                    btnPerfil.setImageResource(R.drawable.circle_background);
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                Toast.makeText(CancionesListaActivity.this, "Error al cargar foto de perfil", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 }

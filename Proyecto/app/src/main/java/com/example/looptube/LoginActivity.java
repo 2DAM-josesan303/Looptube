@@ -8,19 +8,17 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
+import com.example.looptube.models.Usuario;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-
-import com.example.looptube.models.Usuario;
+import com.google.firebase.database.ValueEventListener;
 
 public class LoginActivity extends AppCompatActivity {
 
     private EditText etEmail, etPassword;
     private Button btnLogin, btnRegister;
-
-    private FirebaseAuth mAuth;
     private DatabaseReference mDatabase;
 
     @Override
@@ -28,62 +26,70 @@ public class LoginActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.login);
 
-        mAuth = FirebaseAuth.getInstance();
-        mDatabase = FirebaseDatabase.getInstance().getReference();
-
         etEmail = findViewById(R.id.etEmail);
         etPassword = findViewById(R.id.etPassword);
         btnLogin = findViewById(R.id.btnLogin);
         btnRegister = findViewById(R.id.btnRegister);
 
-        //comprobacion usuario logeado
-        FirebaseUser currentUser = mAuth.getCurrentUser();
-        if (currentUser != null) {
-            comprobarRolUsuario(currentUser.getUid());
-        }
+        mDatabase = FirebaseDatabase.getInstance().getReference("usuarios");
 
         btnLogin.setOnClickListener(v -> loginUser());
-        btnRegister.setOnClickListener(v -> {
-            startActivity(new Intent(this, RegisterActivity.class));
-        });
+        btnRegister.setOnClickListener(v ->
+                startActivity(new Intent(this, RegisterActivity.class))
+        );
     }
 
     private void loginUser() {
-        String email = etEmail.getText().toString().trim();
-        String password = etPassword.getText().toString().trim();
+        String emailInput = etEmail.getText().toString().trim();
+        String passwordInput = etPassword.getText().toString().trim();
 
-        if (email.isEmpty() || password.isEmpty()) {
+        if (emailInput.isEmpty() || passwordInput.isEmpty()) {
             Toast.makeText(this, "Completa todos los campos", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        mAuth.signInWithEmailAndPassword(email, password)
-                .addOnCompleteListener(task -> {
-                    if (task.isSuccessful()) {
-                        String userId = mAuth.getCurrentUser().getUid();
-                        comprobarRolUsuario(userId);
-                    } else {
-                        Toast.makeText(this, "Usuario no registrado o contraseña incorrecta", Toast.LENGTH_SHORT).show();
-                    }
-                });
-    }
+        mDatabase.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot snapshot) {
+                boolean usuarioEncontrado = false;
 
-    private void comprobarRolUsuario(String userId) {
-        DatabaseReference usuarioRef = mDatabase.child("usuarios").child(userId);
-        usuarioRef.get().addOnSuccessListener(snapshot -> {
-            Usuario usuario = snapshot.getValue(Usuario.class);
-            if (usuario != null) {
-                if ("admin".equals(usuario.rol)) {
-                    startActivity(new Intent(this, AdminActivity.class));
-                } else {
-                    startActivity(new Intent(this, MainActivity.class));
+                for (DataSnapshot ds : snapshot.getChildren()) {
+                    Usuario usuario = ds.getValue(Usuario.class);
+                    if (usuario != null && emailInput.equals(usuario.email)) {
+                        usuarioEncontrado = true;
+
+                        if (passwordInput.equals(usuario.contraseña_hash)) {
+                            // Contraseña correcta, ir a Activity según rol
+                            Intent intent;
+                            if ("admin".equals(usuario.rol)) {
+                                intent = new Intent(LoginActivity.this, AdminActivity.class);
+                            } else {
+                                intent = new Intent(LoginActivity.this, MainActivity.class);
+                            }
+
+                            // Pasamos el uid del usuario al MainActivity
+                            intent.putExtra("uid_usuario", ds.getKey()); // ds.getKey() es el id del nodo del usuario en Firebase
+                            startActivity(intent);
+                            finish();
+                        } else {
+                            Toast.makeText(LoginActivity.this,
+                                    "Contraseña incorrecta", Toast.LENGTH_SHORT).show();
+                        }
+                        break;
+                    }
                 }
-                finish();
-            } else {
-                Toast.makeText(this, "Error al obtener los datos del usuario", Toast.LENGTH_SHORT).show();
+
+                if (!usuarioEncontrado) {
+                    Toast.makeText(LoginActivity.this,
+                            "Usuario no registrado", Toast.LENGTH_SHORT).show();
+                }
             }
-        }).addOnFailureListener(e -> {
-            Toast.makeText(this, "Error al acceder a la base de datos", Toast.LENGTH_SHORT).show();
+
+            @Override
+            public void onCancelled(DatabaseError error) {
+                Toast.makeText(LoginActivity.this,
+                        "Error al acceder a la base de datos", Toast.LENGTH_SHORT).show();
+            }
         });
     }
 }

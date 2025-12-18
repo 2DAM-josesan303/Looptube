@@ -3,7 +3,6 @@ package com.example.looptube;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.InputFilter;
-import android.text.Spanned;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.Toast;
@@ -16,10 +15,9 @@ import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
 import com.example.looptube.Adaptadores.PlaylistAdapter;
-import com.example.looptube.models.Cancion;
 import com.google.android.material.navigation.NavigationView;
-import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.*;
 
 import java.util.ArrayList;
@@ -38,8 +36,9 @@ public class ListasReproduccionActivity extends AppCompatActivity {
 
     private DrawerLayout drawerLayout;
     private NavigationView navigationView;
-    private ImageButton btnMenu;
+    private ImageButton btnMenu, btnPerfil;
 
+    private String uidUsuario;
     private final String INVALID_CHARS = ".#$[]";
 
     @Override
@@ -47,8 +46,13 @@ public class ListasReproduccionActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_listas_reproduccion);
 
-        // 🔹 Firebase "listas"
-        ref = FirebaseDatabase.getInstance().getReference("listas");
+        Intent intent = getIntent();
+        uidUsuario = intent.getStringExtra("uid_usuario");
+        if (uidUsuario == null) {
+            Toast.makeText(this, "No se recibió el UID del usuario", Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
 
         rv = findViewById(R.id.rvListasReproduccion);
         rv.setLayoutManager(new LinearLayoutManager(this));
@@ -57,6 +61,16 @@ public class ListasReproduccionActivity extends AppCompatActivity {
         drawerLayout = findViewById(R.id.drawerLayoutListas);
         navigationView = findViewById(R.id.navigationViewListas);
         btnMenu = findViewById(R.id.btnMenu);
+        btnPerfil = findViewById(R.id.btnPerfil); // 🔹 Inicializamos btnPerfil
+
+        // 🔹 Cargar foto de perfil
+        cargarFotoPerfilUsuario();
+
+        // 🔹 Firebase "listas"
+        ref = FirebaseDatabase.getInstance()
+                .getReference("usuarios")
+                .child(uidUsuario)
+                .child("listas");
 
         btnMenu.setOnClickListener(v -> drawerLayout.openDrawer(GravityCompat.START));
 
@@ -67,13 +81,16 @@ public class ListasReproduccionActivity extends AppCompatActivity {
                 drawerLayout.closeDrawer(GravityCompat.START);
 
             } else if (id == R.id.nav_busqueda) {
-                startActivity(new Intent(ListasReproduccionActivity.this, MainActivity.class));
+                Intent i = new Intent(ListasReproduccionActivity.this, MainActivity.class);
+                i.putExtra("uid_usuario", uidUsuario);
+                startActivity(i);
 
             } else if (id == R.id.nav_favoritos) {
-                startActivity(new Intent(ListasReproduccionActivity.this, FavoritosActivity.class));
+                Intent i = new Intent(ListasReproduccionActivity.this, FavoritosActivity.class);
+                i.putExtra("uid_usuario", uidUsuario);
+                startActivity(i);
 
             } else if (id == R.id.nav_logout) {
-                FirebaseAuth.getInstance().signOut();
                 Intent logoutIntent = new Intent(ListasReproduccionActivity.this, LoginActivity.class);
                 logoutIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
                 startActivity(logoutIntent);
@@ -88,6 +105,7 @@ public class ListasReproduccionActivity extends AppCompatActivity {
             @Override
             public void onClickLista(String nombre) {
                 Intent i = new Intent(ListasReproduccionActivity.this, CancionesListaActivity.class);
+                i.putExtra("uid_usuario", uidUsuario);
                 i.putExtra("nombre_lista", nombre);
                 startActivity(i);
             }
@@ -164,31 +182,15 @@ public class ListasReproduccionActivity extends AppCompatActivity {
                 .setView(input)
                 .setPositiveButton("Crear", (dialog, which) -> {
                     String nombre = input.getText().toString().trim();
-                    if (nombre.isEmpty()) return;
-                    if (listas.contains(nombre)) return;
+                    if (nombre.isEmpty() || listas.contains(nombre)) return;
 
                     Map<String, Object> nuevaLista = new HashMap<>();
                     ref.child(nombre).setValue(nuevaLista)
                             .addOnSuccessListener(a -> {
                                 listas.add(nombre);
                                 adapter.notifyItemInserted(listas.size() - 1);
-
-                                Map<String, Object> cancionEjemplo = new HashMap<>();
-                                cancionEjemplo.put("titulo", "The Pointer Sisters - Hot Together (Official Audio) - YouTube");
-                                cancionEjemplo.put("canal", "The Pointer Sisters");
-                                cancionEjemplo.put("url_miniatura", "https://img.youtube.com/vi/H3Aay-47ZT0/hqdefault.jpg");
-                                cancionEjemplo.put("youtubeId", "H3Aay-47ZT0");
-
-                                Map<String, Object> listaConCancion = new HashMap<>();
-                                listaConCancion.put("H3Aay-47ZT0", cancionEjemplo);
-
-                                DatabaseReference refListasLista = FirebaseDatabase.getInstance()
-                                        .getReference("listas").child(nombre);
-                                refListasLista.setValue(listaConCancion);
                             })
-                            .addOnFailureListener(e -> {
-                                Toast.makeText(this, "Error al crear lista", Toast.LENGTH_SHORT).show();
-                            });
+                            .addOnFailureListener(e -> Toast.makeText(this, "Error al crear lista", Toast.LENGTH_SHORT).show());
                 })
                 .setNegativeButton("Cancelar", null)
                 .show();
@@ -206,5 +208,36 @@ public class ListasReproduccionActivity extends AppCompatActivity {
                                 }))
                 .setNegativeButton("Cancelar", null)
                 .show();
+    }
+
+    private void cargarFotoPerfilUsuario() {
+        DatabaseReference refFoto = FirebaseDatabase.getInstance()
+                .getReference("usuarios")
+                .child(uidUsuario)
+                .child("fotoPerfil");
+
+        refFoto.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                if (!snapshot.exists()) {
+                    btnPerfil.setImageResource(R.drawable.circle_background);
+                    return;
+                }
+                String uriString = snapshot.getValue(String.class);
+                if (uriString != null && !uriString.equals("default")) {
+                    Glide.with(ListasReproduccionActivity.this)
+                            .load(uriString)
+                            .circleCrop()
+                            .into(btnPerfil);
+                } else {
+                    btnPerfil.setImageResource(R.drawable.circle_background);
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                Toast.makeText(ListasReproduccionActivity.this, "Error al cargar foto de perfil", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 }
