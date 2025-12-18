@@ -11,18 +11,16 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.looptube.Adaptadores.UsuarioAdapter;
-import com.google.firebase.auth.FirebaseAuth;
+import com.example.looptube.models.Usuario;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.example.looptube.models.Usuario;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class AdminActivity extends AppCompatActivity {
 
-    private FirebaseAuth mAuth;
     private DatabaseReference mDatabase;
 
     private ListView listViewUsuarios;
@@ -37,18 +35,19 @@ public class AdminActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.administrador);
 
-        mAuth = FirebaseAuth.getInstance();
+        // 🔹 Referencia a Firebase Database
         mDatabase = FirebaseDatabase.getInstance().getReference("usuarios");
 
         listViewUsuarios = findViewById(R.id.listViewUsuarios);
         btnAgregarUsuario = findViewById(R.id.btnAgregarUsuario);
         btnSalir = findViewById(R.id.btnSalir);
 
+        // 🔹 Adapter para listar usuarios
         adapter = new UsuarioAdapter(this, UsuariosList, new UsuarioAdapter.OnUsuarioActionListener() {
             @Override
             public void onEditar(Usuario usuario) {
                 Intent intent = new Intent(AdminActivity.this, EditUserActivity.class);
-                intent.putExtra("firebaseId", usuario.firebaseId);
+                intent.putExtra("firebaseId", usuario.firebaseId); // clave única en DB
                 startActivity(intent);
             }
 
@@ -75,18 +74,20 @@ public class AdminActivity extends AppCompatActivity {
 
         listViewUsuarios.setAdapter(adapter);
 
+        // 🔹 Agregar usuario
         btnAgregarUsuario.setOnClickListener(v -> {
             Intent intent = new Intent(AdminActivity.this, RegisterActivity.class);
             intent.putExtra("creandoUsuario", true);
             startActivity(intent);
         });
 
+        // 🔹 Salir
         btnSalir.setOnClickListener(v -> {
-            mAuth.signOut();
             startActivity(new Intent(this, LoginActivity.class));
             finish();
         });
 
+        // 🔹 Cargar usuarios
         cargarUsuarios();
     }
 
@@ -96,7 +97,7 @@ public class AdminActivity extends AppCompatActivity {
             for (DataSnapshot userSnapshot : snapshot.getChildren()) {
                 Usuario usuario = userSnapshot.getValue(Usuario.class);
                 if (usuario != null) {
-                    usuario.firebaseId = userSnapshot.getKey();
+                    usuario.firebaseId = userSnapshot.getKey(); // clave única en DB
                     UsuariosList.add(usuario);
                 }
             }

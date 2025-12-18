@@ -226,6 +226,13 @@ public class MainActivity extends AppCompatActivity {
                 reproducirVideo(cola.get(indiceActual));
             } else Toast.makeText(this, "No hay más videos en la cola", Toast.LENGTH_SHORT).show();
         });
+
+        btnPerfil.setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, EditUserActivity.class);
+            intent.putExtra("firebaseId", uidUsuario);
+            intent.putExtra("soloEdicionPerfil", true);
+            startActivity(intent);
+        });
     }
 
     private void configurarDrawer() {
