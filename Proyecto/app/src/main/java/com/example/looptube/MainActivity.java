@@ -9,6 +9,7 @@ import androidx.drawerlayout.widget.DrawerLayout;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.util.Log;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -62,7 +63,6 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        cargarFotoPerfilUsuario();
         etUrl = findViewById(R.id.etUrl);
         btnCargar = findViewById(R.id.btnCargar);
         btnAñadirCola = findViewById(R.id.btnAñadirCola);
@@ -77,6 +77,7 @@ public class MainActivity extends AppCompatActivity {
         webBuscador = findViewById(R.id.webBuscador);
         drawerLayout = findViewById(R.id.drawerLayout);
         navigationView = findViewById(R.id.navigationView);
+        cargarFotoPerfilUsuario();
 
         webBuscador.getSettings().setJavaScriptEnabled(true);
         webBuscador.addJavascriptInterface(new WebAppInterface(), "Android");
