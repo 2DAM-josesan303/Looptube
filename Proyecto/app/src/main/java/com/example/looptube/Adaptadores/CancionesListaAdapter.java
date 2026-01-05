@@ -44,7 +44,7 @@ public class CancionesListaAdapter extends RecyclerView.Adapter<CancionesListaAd
         Cancion c = canciones.get(position);
 
         holder.tvTitulo.setText(c.titulo);
-
+        /* Mediante el uso de la libreria Glide se carga la imagen de la miniatura del video*/
         Glide.with(holder.itemView.getContext())
                 .load(c.url_miniatura)
                 .placeholder(R.drawable.ic_placeholder)

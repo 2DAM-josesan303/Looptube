@@ -61,12 +61,10 @@ public class ListasReproduccionActivity extends AppCompatActivity {
         drawerLayout = findViewById(R.id.drawerLayoutListas);
         navigationView = findViewById(R.id.navigationViewListas);
         btnMenu = findViewById(R.id.btnMenu);
-        btnPerfil = findViewById(R.id.btnPerfil); // 🔹 Inicializamos btnPerfil
+        btnPerfil = findViewById(R.id.btnPerfil);
 
-        // 🔹 Cargar foto de perfil
         cargarFotoPerfilUsuario();
 
-        // 🔹 Firebase "listas"
         ref = FirebaseDatabase.getInstance()
                 .getReference("usuarios")
                 .child(uidUsuario)
@@ -74,6 +72,7 @@ public class ListasReproduccionActivity extends AppCompatActivity {
 
         btnMenu.setOnClickListener(v -> drawerLayout.openDrawer(GravityCompat.START));
 
+        // <editor-fold desc="Menu lateral">
         navigationView.setNavigationItemSelectedListener(item -> {
             int id = item.getItemId();
 
@@ -89,7 +88,7 @@ public class ListasReproduccionActivity extends AppCompatActivity {
                 Intent i = new Intent(ListasReproduccionActivity.this, FavoritosActivity.class);
                 i.putExtra("uid_usuario", uidUsuario);
                 startActivity(i);
-
+            /* Limpia la pila de activitys y crea una nueva pila inicializando el login */
             } else if (id == R.id.nav_logout) {
                 Intent logoutIntent = new Intent(ListasReproduccionActivity.this, LoginActivity.class);
                 logoutIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -100,7 +99,9 @@ public class ListasReproduccionActivity extends AppCompatActivity {
             drawerLayout.closeDrawer(GravityCompat.START);
             return true;
         });
+        // </editor-fold>
 
+        // <editor-fold desc="ListasAdapter">
         adapter = new PlaylistAdapter(listas, new PlaylistAdapter.Listener() {
             @Override
             public void onClickLista(String nombre) {
@@ -115,10 +116,10 @@ public class ListasReproduccionActivity extends AppCompatActivity {
                 mostrarDialogoEliminarLista(nombre);
             }
         });
+        // </editor-fold>
 
         rv.setAdapter(adapter);
 
-        // 🔹 Cargar listas y crear lista de ejemplo si no existe
         cargarListasConEjemplo();
 
         btnNuevaLista.setOnClickListener(v -> mostrarDialogoCrearLista());
@@ -135,8 +136,7 @@ public class ListasReproduccionActivity extends AppCompatActivity {
                     listas.add(ds.getKey());
                     if ("Lista_Ejemplo".equals(ds.getKey())) listaEjemploExiste = true;
                 }
-
-                // Crear lista de ejemplo si no existe
+                /* Si no hubiese ningun lista creada se añade una por defecto*/
                 if (!listaEjemploExiste) {
                     Map<String, Object> cancionEjemplo = new HashMap<>();
                     cancionEjemplo.put("titulo", "The Pointer Sisters - Hot Together (Official Audio) - YouTube");
@@ -224,6 +224,7 @@ public class ListasReproduccionActivity extends AppCompatActivity {
                     return;
                 }
                 String uriString = snapshot.getValue(String.class);
+                /* Mediante la libreria glide se genera en la cache una version de la imagen seleccionadad en formato de circulo y centrada*/
                 if (uriString != null && !uriString.equals("default")) {
                     Glide.with(ListasReproduccionActivity.this)
                             .load(uriString)

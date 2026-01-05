@@ -48,6 +48,7 @@ public class RegisterActivity extends AppCompatActivity {
         btnRegister = findViewById(R.id.btnRegister);
         btnChangePhoto = findViewById(R.id.btnChangePhoto);
 
+        // <editor-fold desc="Metodo para abrir la galeria">
         ActivityResultLauncher<String> seleccionarImagenLauncher =
                 registerForActivityResult(
                         new ActivityResultContracts.GetContent(),
@@ -58,10 +59,10 @@ public class RegisterActivity extends AppCompatActivity {
                             }
                         }
                 );
-
         btnChangePhoto.setOnClickListener(v ->
                 seleccionarImagenLauncher.launch("image/*")
         );
+        // </editor-fold>
 
         btnRegister.setOnClickListener(v -> registerUser());
     }
@@ -91,7 +92,7 @@ public class RegisterActivity extends AppCompatActivity {
                     usuario.email = email;
                     usuario.contraseña_hash = password;
                     usuario.rol = "usuario";
-
+                    /* Si hay una foto seleccionada guardamos la Uri en el objeto de Usuario*/
                     if (fotoSeleccionadaUri != null) {
                         Uri uriInterna = copiarImagenInterna(fotoSeleccionadaUri);
                         usuario.fotoPerfil = uriInterna != null
@@ -109,6 +110,7 @@ public class RegisterActivity extends AppCompatActivity {
                 );
     }
 
+    /* Almacena la imagen en el almacenamiento interno a traves de la uri de la galeria (content: "URI") para posteriormente mediante un buffer copiar la imagen byte por byte y cambiarle el formato a file:///data/data/com.example.looptube/files/perfil_1767621425026.jpg */
     private Uri copiarImagenInterna(Uri uriOriginal) {
         try {
             InputStream in = getContentResolver().openInputStream(uriOriginal);

@@ -41,14 +41,13 @@ public class FavoritosActivity extends AppCompatActivity {
     private DatabaseReference dbFavoritos;
     private DatabaseReference dbCanciones;
 
-    private String uidUsuario; // ✅ UID recibido desde MainActivity
+    private String uidUsuario;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.favoritos_historial);
 
-        // 🔹 Recibir UID desde MainActivity
         Intent intent = getIntent();
         uidUsuario = intent.getStringExtra("uid_usuario");
         if (uidUsuario == null) {
@@ -57,22 +56,19 @@ public class FavoritosActivity extends AppCompatActivity {
             return;
         }
 
-        // Inicializar vistas
         drawerLayout = findViewById(R.id.drawerLayout);
         navigationView = findViewById(R.id.navigationView);
         btnMenu = findViewById(R.id.btnMenu);
         btnBorrarHistorial = findViewById(R.id.btnBorrarHistorial);
-        btnPerfil = findViewById(R.id.btnPerfil); // 🔹 Inicializar btnPerfil
+        btnPerfil = findViewById(R.id.btnPerfil);
         rvFavoritos = findViewById(R.id.rvFavoritos);
         rvHistorial = findViewById(R.id.rvHistorial);
 
         rvFavoritos.setLayoutManager(new LinearLayoutManager(this));
         rvHistorial.setLayoutManager(new LinearLayoutManager(this));
 
-        // 🔹 Cargar foto de perfil
         cargarFotoPerfilUsuario();
 
-        // 🔹 Referencias Firebase usando UID recibido
         dbFavoritos = FirebaseDatabase.getInstance()
                 .getReference("usuarios")
                 .child(uidUsuario)
@@ -83,7 +79,7 @@ public class FavoritosActivity extends AppCompatActivity {
                 .child(uidUsuario)
                 .child("historial");
 
-        // 🔹 Adaptadores
+        // <editor-fold desc="Adapter Favoritos">
         favoritoAdapter = new FavoritoAdapter(listaFavoritos, new FavoritoAdapter.Listener() {
             @Override
             public void onPlay(Cancion c) {
@@ -109,7 +105,9 @@ public class FavoritosActivity extends AppCompatActivity {
             }
         });
         rvFavoritos.setAdapter(favoritoAdapter);
+        // </editor-fold>
 
+        // <editor-fold desc="Adapter Historial">
         historialAdapter = new HistorialAdapter(listaHistorial, new HistorialAdapter.Listener() {
             @Override
             public void onPlay(Cancion c) {
@@ -145,12 +143,13 @@ public class FavoritosActivity extends AppCompatActivity {
                 }
             }
         });
+        // </editor-fold>
+
         rvHistorial.setAdapter(historialAdapter);
 
         cargarFavoritos();
         cargarHistorial();
 
-        // 🔹 Botón borrar historial
         btnBorrarHistorial.setOnClickListener(v -> mostrarDialogoEliminacion(
                 "Borrar Historial",
                 "¿Seguro que quieres borrar todo el historial?",
@@ -174,7 +173,7 @@ public class FavoritosActivity extends AppCompatActivity {
 
         btnMenu.setOnClickListener(v -> drawerLayout.openDrawer(GravityCompat.START));
 
-        // 🔹 Navegación sin FirebaseAuth
+        // <editor-fold desc="Menu lateral">
         navigationView.setNavigationItemSelectedListener(item -> {
             int id = item.getItemId();
 
@@ -201,6 +200,7 @@ public class FavoritosActivity extends AppCompatActivity {
             drawerLayout.closeDrawer(GravityCompat.START);
             return true;
         });
+        // </editor-fold>
     }
 
     private void cargarFavoritos() {

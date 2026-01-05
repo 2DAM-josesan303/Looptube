@@ -59,16 +59,14 @@ public class LoginActivity extends AppCompatActivity {
                         usuarioEncontrado = true;
 
                         if (passwordInput.equals(usuario.contraseña_hash)) {
-                            // Contraseña correcta, ir a Activity según rol
+                            /* Segun el rol redirige a una Activity u otra*/
                             Intent intent;
                             if ("admin".equals(usuario.rol)) {
                                 intent = new Intent(LoginActivity.this, AdminActivity.class);
                             } else {
                                 intent = new Intent(LoginActivity.this, MainActivity.class);
                             }
-
-                            // Pasamos el uid del usuario al MainActivity
-                            intent.putExtra("uid_usuario", ds.getKey()); // ds.getKey() es el id del nodo del usuario en Firebase
+                            intent.putExtra("uid_usuario", ds.getKey());
                             startActivity(intent);
                             finish();
                         } else {

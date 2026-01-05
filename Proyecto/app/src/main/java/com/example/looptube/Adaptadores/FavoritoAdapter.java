@@ -46,19 +46,16 @@ public class FavoritoAdapter extends RecyclerView.Adapter<FavoritoAdapter.VH> {
         holder.tvTitulo.setText(c.titulo);
         holder.tvCanal.setText(c.canal);
 
-        // Cargar miniatura con Glide
+        /* Mediante el uso de la libreria Glide se carga la imagen de la miniatura del video*/
         Glide.with(holder.itemView.getContext())
                 .load(c.url_miniatura)
-                .placeholder(R.drawable.ic_placeholder) // opcional
+                .placeholder(R.drawable.ic_placeholder)
                 .into(holder.ivMiniatura);
 
-        // Botón reproducir
         holder.btnPlay.setOnClickListener(v -> listener.onPlay(c));
 
-        // Botón eliminar
         holder.btnDelete.setOnClickListener(v -> listener.onDelete(c, holder.getAdapterPosition()));
 
-        // Click sobre el item completo reproduce también
         holder.itemView.setOnClickListener(v -> listener.onPlay(items.get(holder.getAdapterPosition())));
     }
 

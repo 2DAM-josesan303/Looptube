@@ -135,6 +135,7 @@ public class MainActivity extends AppCompatActivity {
         dbFavoritos = FirebaseDatabase.getInstance().getReference("usuarios").child(uidUsuario).child("favoritos");
     }
 
+    /* Mediante el uso de WebAppInterface se inyecciona codigo javascript para conseguir titulo del video, Nombre del canal y Miniatura del video para posteriormente cargar la URL de youtube al WebView*/
     private void configurarWebView() {
         webBuscador.getSettings().setJavaScriptEnabled(true);
         webBuscador.addJavascriptInterface(new WebAppInterface(), "Android");
@@ -143,11 +144,14 @@ public class MainActivity extends AppCompatActivity {
             public void onPageFinished(WebView view, String url) {
                 if (view == null) return;
 
+                /* Nombre del Video*/
                 view.loadUrl("javascript:Android.setTitle(document.title)");
+                /* Nombre del canal*/
                 view.loadUrl("javascript:(function(){ " +
                         "var channel = document.querySelector('#owner-name a, .ytd-channel-name a');" +
                         "Android.setChannel(channel ? channel.innerText : 'Canal desconocido');" +
                         "})();");
+                /* Miniatura del Video*/
                 view.loadUrl("javascript:(function(){ " +
                         "var vid = new URL(window.location.href).searchParams.get('v');" +
                         "if (vid) {" +
@@ -241,7 +245,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void configurarDrawer() {
         btnMenu.setOnClickListener(v -> drawerLayout.openDrawer(GravityCompat.START));
-
+        // <editor-fold desc="Menu lateral">
         navigationView.setNavigationItemSelectedListener(item -> {
             int id = item.getItemId();
 
@@ -265,6 +269,7 @@ public class MainActivity extends AppCompatActivity {
             drawerLayout.closeDrawer(GravityCompat.START);
             return true;
         });
+        // </editor-fold>
     }
 
     private void reproducirVideo(String videoId) {
@@ -343,6 +348,7 @@ public class MainActivity extends AppCompatActivity {
                     return;
                 }
                 String uriString = snapshot.getValue(String.class);
+                /* Mediante la libreria glide se genera en la cache una version de la imagen seleccionadad en formato de circulo y centrada*/
                 if (uriString != null && !uriString.equals("default")) {
                     Glide.with(MainActivity.this)
                             .load(Uri.parse(uriString))
@@ -360,6 +366,10 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    /* Algoritmo para extraer el id de las canciones/videos de youtube a traves de la URL formatos soportados:
+    *  - https://youtu.be/VIDEO_ID
+    *  - https://www.youtube.com/watch?v=VIDEO_ID
+    *  - https://www.youtube.com/embed/VIDEO_ID*/
     private String extraerYoutubeId(String url) {
         try {
             if (url.contains("youtu.be/")) {
@@ -467,6 +477,7 @@ public class MainActivity extends AppCompatActivity {
                 .addOnFailureListener(e -> Toast.makeText(this, "Error al añadir a la lista", Toast.LENGTH_SHORT).show());
     }
 
+    /* Interfaz que sirve como puente entre la web de youtube cargada en el Webview y la app mediante el uso de Javascript*/
     public class WebAppInterface {
         @JavascriptInterface
         public void setTitle(String title) {
@@ -487,7 +498,7 @@ public class MainActivity extends AppCompatActivity {
             runOnUiThread(() -> currentThumbnail = url);
             if (cancionActual != null) cancionActual.url_miniatura = url;
         }
-
+        /* Cuando detecta que se ha reproducido un video nuevo actualiza los datos*/
         @JavascriptInterface
         public void onNewVideoDetected(String videoId) {
             runOnUiThread(() -> {
@@ -499,13 +510,9 @@ public class MainActivity extends AppCompatActivity {
                         currentChannel,
                         currentThumbnail
                 );
-
                 c.asegurarCanal();
                 cancionActual = c;
-
                 guardarEnHistorial(c);
-
-                // Cola local (opcional)
                 if (!cola.contains(videoId)) {
                     cola.add(videoId);
                     indiceActual = cola.size() - 1;

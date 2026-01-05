@@ -46,7 +46,7 @@ public class EditUserActivity extends AppCompatActivity {
         btnChangePhoto = findViewById(R.id.btnChangePhoto);
         ivProfile = findViewById(R.id.ivProfile);
 
-        // 🔹 No modificable
+        /* Deshabilita la posibilidad de modificar el rol*/
         spinnerRol.setEnabled(false);
 
         mDatabase = FirebaseDatabase.getInstance().getReference("usuarios");
@@ -58,13 +58,11 @@ public class EditUserActivity extends AppCompatActivity {
             return;
         }
 
-        // Lanzador de selector de imagen
         seleccionarImagenLauncher = registerForActivityResult(
                 new ActivityResultContracts.GetContent(),
                 uri -> {
                     if (uri != null) {
                         nuevaFotoPerfilUri = uri;
-                        // Mostrar la nueva foto en el ImageView
                         Glide.with(EditUserActivity.this)
                                 .load(uri)
                                 .circleCrop()
@@ -88,7 +86,6 @@ public class EditUserActivity extends AppCompatActivity {
                 etNombre.setText(usuarioActual.nombre);
                 etPassword.setText(usuarioActual.contraseña_hash);
 
-                // Mostrar foto actual
                 if (usuarioActual.fotoPerfil != null && !usuarioActual.fotoPerfil.equals("default")) {
                     Glide.with(this)
                             .load(Uri.parse(usuarioActual.fotoPerfil))
@@ -98,7 +95,6 @@ public class EditUserActivity extends AppCompatActivity {
                     ivProfile.setImageResource(R.drawable.circle_background);
                 }
 
-                // Mostrar rol (no editable)
                 ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
                         android.R.layout.simple_spinner_item,
                         new String[]{usuarioActual.rol});
@@ -126,7 +122,6 @@ public class EditUserActivity extends AppCompatActivity {
             return;
         }
 
-        // Preparamos los cambios en un Map
         Map<String, Object> cambios = new HashMap<>();
         cambios.put("email", nuevoEmail);
         cambios.put("nombre", nuevoNombre);
@@ -148,7 +143,7 @@ public class EditUserActivity extends AppCompatActivity {
                         Toast.makeText(this, "Error al actualizar: " + e.getMessage(), Toast.LENGTH_SHORT).show()
                 );
     }
-
+    /* Almacena la imagen en el almacenamiento interno a traves de la uri de la galeria (content: "URI") para posteriormente mediante un buffer copiar la imagen byte por byte y cambiarle el formato a file:///data/data/com.example.looptube/files/perfil_1767621425026.jpg */
     private Uri copiarImagenInterna(Uri uriOriginal) {
         try {
             InputStream in = getContentResolver().openInputStream(uriOriginal);

@@ -15,6 +15,7 @@ import com.example.looptube.DAO.DAO;
         version = 1,
         exportSchema = false
 )
+/* Clase abstracta para implementacion con Room y el DAO*/
 public abstract class AppDatabase extends RoomDatabase {
     public abstract DAO dao();
 }

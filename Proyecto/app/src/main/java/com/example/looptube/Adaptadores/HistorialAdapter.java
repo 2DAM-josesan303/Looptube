@@ -45,16 +45,14 @@ public class HistorialAdapter extends RecyclerView.Adapter<HistorialAdapter.VH> 
         Cancion c = items.get(position);
         holder.tvTitle.setText(c.titulo);
 
-        // Reproducir al tocar la fila
         holder.itemView.setOnClickListener(v -> listener.onPlay(c));
 
-        // Eliminar canción individual de la cola (tabla "canciones")
         holder.btnEliminar.setOnClickListener(v -> {
             new AlertDialog.Builder(holder.itemView.getContext())
                     .setTitle("Eliminar del Historial")
                     .setMessage("¿Seguro que quieres eliminar \"" + c.titulo + "\" del historial?")
                     .setPositiveButton("Sí", (dialog, which) -> {
-                        if (c.key != null) { // usar la key real de Firebase
+                        if (c.key != null) {
                             FirebaseDatabase.getInstance().getReference("canciones")
                                     .child(c.key)
                                     .removeValue()

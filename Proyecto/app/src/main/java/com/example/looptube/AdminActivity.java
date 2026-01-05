@@ -35,19 +35,18 @@ public class AdminActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.administrador);
 
-        // 🔹 Referencia a Firebase Database
         mDatabase = FirebaseDatabase.getInstance().getReference("usuarios");
 
         listViewUsuarios = findViewById(R.id.listViewUsuarios);
         btnAgregarUsuario = findViewById(R.id.btnAgregarUsuario);
         btnSalir = findViewById(R.id.btnSalir);
 
-        // 🔹 Adapter para listar usuarios
+        // <editor-fold desc="Adapter de Usuarios">
         adapter = new UsuarioAdapter(this, UsuariosList, new UsuarioAdapter.OnUsuarioActionListener() {
             @Override
             public void onEditar(Usuario usuario) {
                 Intent intent = new Intent(AdminActivity.this, EditUserActivity.class);
-                intent.putExtra("firebaseId", usuario.firebaseId); // clave única en DB
+                intent.putExtra("firebaseId", usuario.firebaseId);
                 startActivity(intent);
             }
 
@@ -71,23 +70,21 @@ public class AdminActivity extends AppCompatActivity {
                         .show();
             }
         });
+        // </editor-fold>
 
         listViewUsuarios.setAdapter(adapter);
 
-        // 🔹 Agregar usuario
         btnAgregarUsuario.setOnClickListener(v -> {
             Intent intent = new Intent(AdminActivity.this, RegisterActivity.class);
             intent.putExtra("creandoUsuario", true);
             startActivity(intent);
         });
 
-        // 🔹 Salir
         btnSalir.setOnClickListener(v -> {
             startActivity(new Intent(this, LoginActivity.class));
             finish();
         });
 
-        // 🔹 Cargar usuarios
         cargarUsuarios();
     }
 
@@ -97,7 +94,7 @@ public class AdminActivity extends AppCompatActivity {
             for (DataSnapshot userSnapshot : snapshot.getChildren()) {
                 Usuario usuario = userSnapshot.getValue(Usuario.class);
                 if (usuario != null) {
-                    usuario.firebaseId = userSnapshot.getKey(); // clave única en DB
+                    usuario.firebaseId = userSnapshot.getKey();
                     UsuariosList.add(usuario);
                 }
             }

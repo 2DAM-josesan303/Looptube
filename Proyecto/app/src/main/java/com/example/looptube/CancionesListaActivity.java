@@ -40,15 +40,13 @@ public class CancionesListaActivity extends AppCompatActivity {
     private DrawerLayout drawerLayout;
     private NavigationView navigationView;
 
-    private String uidUsuario; // UID recibido desde MainActivity/ListasReproduccionActivity
+    private String uidUsuario;
     private String nombreLista;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_canciones_lista);
-
-        // 🔹 Recibir UID y nombre de lista desde Intent
         uidUsuario = getIntent().getStringExtra("uid_usuario");
         if (uidUsuario == null) {
             Toast.makeText(this, "No se recibió el UID del usuario", Toast.LENGTH_SHORT).show();
@@ -63,7 +61,6 @@ public class CancionesListaActivity extends AppCompatActivity {
             return;
         }
 
-        // Inicializar vistas
         tvTituloLista = findViewById(R.id.tvTituloCancionesLista);
         rvCanciones = findViewById(R.id.rvCancionesLista);
         btnMenu = findViewById(R.id.btnMenu);
@@ -75,6 +72,9 @@ public class CancionesListaActivity extends AppCompatActivity {
         cargarFotoPerfilUsuario();
 
         rvCanciones.setLayoutManager(new LinearLayoutManager(this));
+
+
+        // <editor-fold desc="CancionesListaAdapter">
         adapter = new CancionesListaAdapter(canciones, new CancionesListaAdapter.Listener() {
             @Override
             public void onPlay(Cancion c) {
@@ -83,7 +83,7 @@ public class CancionesListaActivity extends AppCompatActivity {
                 i.putExtra("videoId", c.youtubeId);
                 i.putExtra("channelName", c.canal);
                 i.putExtra("thumbnailUrl", c.url_miniatura);
-                i.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                i.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP); /* Reutiliza el MainActivity sin crearla de nuevo*/
                 startActivity(i);
             }
 
@@ -92,6 +92,8 @@ public class CancionesListaActivity extends AppCompatActivity {
                 mostrarDialogoEliminar(c, pos);
             }
         });
+        // </editor-fold>
+
         rvCanciones.setAdapter(adapter);
 
         dbCanciones = FirebaseDatabase.getInstance()
@@ -104,7 +106,7 @@ public class CancionesListaActivity extends AppCompatActivity {
 
         btnMenu.setOnClickListener(v -> drawerLayout.openDrawer(GravityCompat.START));
 
-        // Configurar navegación del drawer
+        // <editor-fold desc="Menu lateral">
         navigationView.setNavigationItemSelectedListener(item -> {
             int id = item.getItemId();
 
@@ -130,6 +132,7 @@ public class CancionesListaActivity extends AppCompatActivity {
             drawerLayout.closeDrawer(GravityCompat.START);
             return true;
         });
+        // </editor-fold>
     }
 
     private void cargarCancionesDeLista() {
