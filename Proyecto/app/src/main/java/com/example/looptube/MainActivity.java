@@ -142,6 +142,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onPageFinished(WebView view, String url) {
                 if (view == null) return;
+
                 view.loadUrl("javascript:Android.setTitle(document.title)");
                 view.loadUrl("javascript:(function(){ " +
                         "var channel = document.querySelector('#owner-name a, .ytd-channel-name a');" +
@@ -149,7 +150,10 @@ public class MainActivity extends AppCompatActivity {
                         "})();");
                 view.loadUrl("javascript:(function(){ " +
                         "var vid = new URL(window.location.href).searchParams.get('v');" +
-                        "if (vid) Android.setThumbnail('https://img.youtube.com/vi/' + vid + '/hqdefault.jpg');" +
+                        "if (vid) {" +
+                        "  Android.setThumbnail('https://img.youtube.com/vi/' + vid + '/hqdefault.jpg');" +
+                        "  Android.onNewVideoDetected(vid);" +
+                        "}" +
                         "})();");
             }
         });
@@ -289,6 +293,25 @@ public class MainActivity extends AppCompatActivity {
                     .addOnFailureListener(e -> Toast.makeText(MainActivity.this, "Error al añadir", Toast.LENGTH_SHORT).show());
         }
     }
+
+    private void guardarEnHistorial(Cancion c) {
+        if (c == null || c.youtubeId == null) return;
+
+        dbCanciones.orderByChild("youtubeId")
+                .equalTo(c.youtubeId)
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        if (!snapshot.exists()) {
+                            dbCanciones.push().setValue(c);
+                        }
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {}
+                });
+    }
+
 
     private void cargarColaDesdeFirebase() {
         dbCanciones.addValueEventListener(new ValueEventListener() {
@@ -463,6 +486,31 @@ public class MainActivity extends AppCompatActivity {
         public void setThumbnail(String url) {
             runOnUiThread(() -> currentThumbnail = url);
             if (cancionActual != null) cancionActual.url_miniatura = url;
+        }
+
+        @JavascriptInterface
+        public void onNewVideoDetected(String videoId) {
+            runOnUiThread(() -> {
+                if (videoId == null) return;
+
+                Cancion c = new Cancion(
+                        tvTitulo.getText().toString(),
+                        videoId,
+                        currentChannel,
+                        currentThumbnail
+                );
+
+                c.asegurarCanal();
+                cancionActual = c;
+
+                guardarEnHistorial(c);
+
+                // Cola local (opcional)
+                if (!cola.contains(videoId)) {
+                    cola.add(videoId);
+                    indiceActual = cola.size() - 1;
+                }
+            });
         }
     }
 }
